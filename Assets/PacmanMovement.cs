@@ -5,65 +5,34 @@ using UnityEngine;
 
 public class PacmanMovement : MonoBehaviour
 {
+  // current position of pacman, also used as start position
   public Vector2 currentPos = new Vector2(13.875f, 7.625f);
+  // speed of pacman
   public float speed;
+  // reference to the grid object
   public Grid grid;
-
-  // target position
-  private Vector2 targetPos;
 
   // tile in the pacman maze grid
   private TileCoordinate currentTile;
-  private TileCoordinate targetTile;
-
   // current movement directions
   private Grid.Dir currentDir = Grid.Dir.Left;
-  private int counter = 0;
+  // target position
+  private Vector2 targetPos;
 
   // Start is called before the first frame update
   void Start()
   {
+    // fetch direct reference to grid object
     grid = grid.GetComponent<Grid>();
+    // set the current tile based on current position
     currentTile = grid.GetTileCoordinate(currentPos);
+    // set new target position
     SetNewTargetPos();
   }
-
-
 
   // Update is called once per frame
   // no use of physics, so using Update instead of FixedUpdate for now
   void Update()
-  {
-    ProcessKeyPress();
-  }
-
-  void FixedUpdate()
-  {
-    currentPos = Vector2.MoveTowards(currentPos, targetPos, speed);
-    // transform to view grid and pixelate
-    transform.position = grid.SnapToPixel(currentPos);
-
-    Debug.Log("currentPos: " + currentPos.x + " " + currentPos.y);
-    Debug.Log("pixelctPos: " + transform.position.x + " " + transform.position.y);
-    // if tile changed, update target position
-    // TODO - add track change to TileCoord struct
-    TileCoordinate tileCoord = grid.GetTileCoordinate(transform.position);
-    if(currentTile.Differs(tileCoord)) {
-      currentTile = tileCoord;
-      SetNewTargetPos();
-    }
-    // if(counter % 100 == 0 ) {
-    //   Debug.Log("tileCoord: " + tileCoord.x + " " + tileCoord.y);
-    //   Debug.Log("currentTile: " + currentTile.x + " " + currentTile.y);
-    //   Debug.Log("targetTile: " + targetTile.x + " " + targetTile.y);
-    //   Debug.Log("differs: " + currentTile.differs(tileCoord));
-    //   Debug.Log("current position pixalized: " + transform.position.x + ", " + transform.position.y);
-    //   Debug.Log("target position pixalized: " + targetPos.x + ", " + targetPos.y);
-    // }
-    // counter++;
-  }
-
-  void ProcessKeyPress()
   {
     // NOTE:
     // - if multipe keys are pressed, left is favorised to down etc.
@@ -83,16 +52,34 @@ public class PacmanMovement : MonoBehaviour
     if(Input.GetKey(KeyCode.LeftArrow)) {
       if(ChangeDir(Grid.Dir.Left)) return;
     }
+  }
 
+  void FixedUpdate()
+  {
+    currentPos = Vector2.MoveTowards(currentPos, targetPos, speed);
+    // transform to view grid and pixelate
+    transform.position = grid.SnapToPixel(currentPos);
+
+    Debug.Log("currentPos: " + currentPos.x + " " + currentPos.y);
+    Debug.Log("pixelctPos: " + transform.position.x + " " + transform.position.y);
+
+    // if tile changed, update current tile and set new target position
+    TileCoordinate tileCoord = grid.GetTileCoordinate(transform.position);
+    if(currentTile.Differs(tileCoord)) {
+      currentTile = tileCoord;
+      SetNewTargetPos();
+    }
   }
 
   void SetNewTargetPos()
   {
-    TileCoordinate newTargetTile = grid.GetTargetTile(currentTile, currentDir);
-    Debug.Log("currentTile: " + currentTile.x + " " + currentTile.y);
-    Debug.Log("targetTile: " + targetTile.x + " " + targetTile.y);
-    if(grid.TileIsPath(newTargetTile)) {
-      targetPos = grid.GetTargetPos(newTargetTile, currentDir);
+    // retrieve target tile based on current tile and current direction
+    TileCoordinate targetTile = grid.GetTargetTile(currentTile, currentDir);
+    // check if target tile is valid
+    // if valid: retrieve target position in the target tile
+    // else: set target position to current tile center
+    if(grid.TileIsPath(targetTile)) {
+      targetPos = grid.GetTargetPos(targetTile, currentDir);
     } else {
       targetPos = grid.GetTileCenterPos(currentTile);
     }
@@ -100,17 +87,14 @@ public class PacmanMovement : MonoBehaviour
 
   bool ChangeDir(Grid.Dir dir)
   {
-    Debug.Log("ChangeDir - top");
     // no need to change if the currentDirection is the same
     if(currentDir != dir) {
-      Debug.Log("current dir is not the same as new dir");
-      TileCoordinate newTargetTile = grid.GetTargetTile(currentTile, dir);
-      newTargetTile.Log("new target tile");
-      if(grid.TileIsPath(newTargetTile)) {
+      TileCoordinate targetTile = grid.GetTargetTile(currentTile, dir);
+      if(grid.TileIsPath(targetTile)) {
         // store the new direction in currentDir to new dir
         currentDir = dir;
         // update target tile and position
-        targetPos = grid.GetTargetPos(newTargetTile, currentDir);
+        targetPos = grid.GetTargetPos(targetTile, currentDir);
         return true;
       }
     }
@@ -119,26 +103,3 @@ public class PacmanMovement : MonoBehaviour
   }
 
 }
-
-
-
-
-
-/*
-
-https://stackoverflow.com/questions/34447682/what-is-the-difference-between-update-fixedupdate-in-unity
-Update()
-
-Called every frame
-Used for regular updates such as :
-Moving non-physics objects
-Simple timers
-Receiving input (aka keypress etc)
-Update interval call times will vary, ie non-uniformly spaced
-FixedUpdate()
-
-Called every physics step
-FixedUpdate() intervals are consistent, ie uniformly spaced
-Used for regular updates such as adjusting physic (eg. RigidBody) objects
-
-*/

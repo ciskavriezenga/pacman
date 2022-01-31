@@ -11,7 +11,6 @@ public struct TileCoordinate
     get { return _x; }
     set{
       _x = value;
-      // TODO - CoordinatesChanged(_x);
     }
   }
 
@@ -19,8 +18,7 @@ public struct TileCoordinate
   {
       get { return _y; }
       set{
-          _y = value;
-          // TODO - CoordinatesChanged(_y);
+        _y = value;
       }
   }
 
@@ -29,6 +27,7 @@ public struct TileCoordinate
     _y = y;
   }
 
+  // ------------ add methods ------------
   public void Add(TileCoordinate pos)
   {
     _x = _x + pos.x;
