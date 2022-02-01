@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
+// TODO - use with Vector2Int instead of TileCoord
 public class PacmanMovement : MonoBehaviour
 {
   // current position of pacman, also used as start position

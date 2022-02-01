@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class Grid : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class Grid : MonoBehaviour
   //public UnityEngine.UI.RawImage gridImg;
   public Sprite gridImg;
   public string imgPath = "./assets/pacman.png";
+  public Tilemap tilemap;
   private Color[] gridPixels;
 
   private TileCoordinate[] directions = {
@@ -56,6 +58,10 @@ public class Grid : MonoBehaviour
     Texture2D gridTexture2D = new Texture2D(width, height);
     gridTexture2D.LoadImage(imgData);
     gridPixels = gridTexture2D.GetPixels();
+
+
+    PlaceTiles();
+
   }
 
 
@@ -95,6 +101,22 @@ public class Grid : MonoBehaviour
     pos.y = System.MathF.Floor(pos.y * pixelateFactor);
     return pos * invPixelateFactor;
   }
+
+  private void PlaceTiles()
+  {
+    //Tilemap tmap = GetComponent<Tilemap>();
+    TileBase tile = tilemap.GetTile(new Vector3Int(0, 31, 0));
+
+    for(int i = 0; i < 12; i++) {
+      int y = i / 4;
+      int x = i % 4;
+      Vector3Int pos = new Vector3Int(y, x, 0);
+      tilemap.SetTile(pos, tile);
+    }
+
+
+  }
+
 
 
 }
