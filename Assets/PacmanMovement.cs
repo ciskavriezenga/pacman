@@ -27,6 +27,7 @@ public class PacmanMovement : MonoBehaviour
     grid = grid.GetComponent<Grid>();
     // set the current tile based on current position
     currentTile = grid.GetTileCoordinate(currentPos);
+    Debug.Log("Pacman start tile: " + currentTile.x + " " + currentTile.y);
     // set new target position
     SetNewTargetPos();
   }
@@ -41,6 +42,7 @@ public class PacmanMovement : MonoBehaviour
     //   we check for each direction. E.g. when up and left are pressed and
     //   heading left is not allowed but up is, we change our direction upwards
 
+    // TODO - prevent multiple key presses 2 directions issue
     if (Input.GetKey(KeyCode.UpArrow)) {
       if(ChangeDir(Grid.Dir.Up)) return;
     }
@@ -61,8 +63,9 @@ public class PacmanMovement : MonoBehaviour
     // transform to view grid and pixelate
     transform.position = grid.SnapToPixel(currentPos);
 
-    Debug.Log("currentPos: " + currentPos.x + " " + currentPos.y);
-    Debug.Log("pixelctPos: " + transform.position.x + " " + transform.position.y);
+    // Debug.Log("currentPos: " + currentPos.x + " " + currentPos.y);
+    // Debug.Log("pixelctPos: " + transform.position.x + " " + transform.position.y);
+    // Debug.Log("targetPos: " + targetPos.x + " " + targetPos.y);
 
     // if tile changed, update current tile and set new target position
     TileCoordinate tileCoord = grid.GetTileCoordinate(transform.position);

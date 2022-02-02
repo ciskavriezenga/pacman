@@ -11,6 +11,8 @@ public class Grid : MonoBehaviour
   public Sprite gridImg;
   public string imgPath = "./assets/pacman.png";
   public Tilemap tilemap;
+  public RuleTile ruletile;
+
   private Color[] gridPixels;
 
   private TileCoordinate[] directions = {
@@ -59,14 +61,13 @@ public class Grid : MonoBehaviour
     gridTexture2D.LoadImage(imgData);
     gridPixels = gridTexture2D.GetPixels();
 
-
     PlaceTiles();
-
   }
 
 
   public TileCoordinate GetTileCoordinate(Vector2 pos)
   {
+    // add 1 x and y offset to take the border into account
     return new TileCoordinate((int) pos.x, (int) pos.y);
   }
 
@@ -80,6 +81,7 @@ public class Grid : MonoBehaviour
   {
     // return target position given targetTile and enter Direction
     return targetTile.Add(targetPosOnTile[(int) enterDir]);
+
   }
 
   public Vector2 GetTileCenterPos(TileCoordinate tile) {
@@ -89,7 +91,6 @@ public class Grid : MonoBehaviour
   public bool TileIsPath(TileCoordinate currentTile) {
     int gridPixelsIndex = currentTile.x + currentTile.y * width;
     bool isPath = gridPixels[gridPixelsIndex]  == Color.white; // Color.black
-    Debug.Log("Tile is path: " + isPath);
     return isPath;
   }
 
@@ -105,13 +106,19 @@ public class Grid : MonoBehaviour
   private void PlaceTiles()
   {
     //Tilemap tmap = GetComponent<Tilemap>();
-    TileBase tile = tilemap.GetTile(new Vector3Int(0, 31, 0));
+    //TileBase tile = (TileBase) TileBase.CreateInstance("Assets/tiles/walls-inner.asset");// tilemap.GetTile(new Vector3Int(0, 31, 0));
 
-    for(int i = 0; i < 12; i++) {
-      int y = i / 4;
-      int x = i % 4;
-      Vector3Int pos = new Vector3Int(y, x, 0);
-      tilemap.SetTile(pos, tile);
+    // also draw a border with rule tiles, to ensure correct display of border
+    int size = width * height;
+    for(int i = 0; i < size; i++) {
+      TileCoordinate tileCoord = new TileCoordinate(0,0);
+      tileCoord.y = i / width;
+      tileCoord.x = i - (tileCoord.y * width); // * is cheaper than %
+      // if tile coordinate is wall - add wall tile
+      if(!TileIsPath(tileCoord)) {
+        Vector3Int pos = new Vector3Int(tileCoord.x, tileCoord.y, 0);
+        tilemap.SetTile(pos, ruletile);
+      }
     }
 
 
