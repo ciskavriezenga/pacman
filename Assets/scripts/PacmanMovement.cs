@@ -70,6 +70,7 @@ public class PacmanMovement : MonoBehaviour
 
     // if tile changed, update current tile and set new target position
     Vector2Int tileCoord = grid.GetTileCoordinate(transform.position);
+
     if(!currentTile.Equals(tileCoord)) {
       currentTile = tileCoord;
       SetNewMoveToPos();

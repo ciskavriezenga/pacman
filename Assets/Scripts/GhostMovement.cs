@@ -23,13 +23,12 @@ public class GhostMovement : MonoBehaviour
   // move to this position
   private Vector2 moveToPos;
 
-
   // the oposite directions to a given direction
   private Grid.Dir[] oppositeDirs = {
-    Grid.Dir.Up, // Up --> down
-    Grid.Dir.Right, // Right --> Left
-    Grid.Dir.Down, // Down --> up
-    Grid.Dir.Left, // left --> right
+    Grid.Dir.Down, // Up --> down
+    Grid.Dir.Left, // Right --> Left
+    Grid.Dir.Up, // Down --> up
+    Grid.Dir.Right, // left --> right
   };
 
   // 2d array to quickly retrieve the allowed directions based on current
@@ -59,9 +58,13 @@ public class GhostMovement : MonoBehaviour
     // fetch first adjacent tile in direction - for now assuming this is valid
     // TODO - fix this setup step
     Vector2Int moveTo = grid.GetAdjacentTile(currentTile, currentDir);
-    moveToTile.Enqueue(moveTo);
+    Debug.Log("Ghost - currentPos: " + currentPos.x + " " + currentPos.y);
+    Debug.Log("Ghost - currentTile: " + currentTile.x + " " + currentTile.y);
+    Debug.Log("Ghost - moveTo: " + moveTo.x + " " + moveTo.y);
     AddPixelCoordMoves(moveTo);
-    AddTileMoves(moveToTile.Peek());
+    AddTileMoves(moveTo);
+    moveToPos = grid.Position(moveToPixel.Peek());
+    Debug.Log("Ghost - moveToPos: " + moveToPos.x + " " + moveToPos.y);
   }
 
   // Update is called once per frame
@@ -72,27 +75,30 @@ public class GhostMovement : MonoBehaviour
 
     // cache the coordinate of pixel corresponding to the current position
     Vector2Int currentPixelCoord = grid.PixelCoordinate(currentPos);
+    //Debug.Log("Ghost - currentPixelCoord: " + currentPixelCoord.x + " " + currentPixelCoord.y);
+    //Debug.Log("Ghost - moveToPixel.Peek(): " + moveToPixel.Peek().x + " " + moveToPixel.Peek().y);
     // transform the pixel coordinate back to the floating point position
     transform.position = grid.Position(currentPixelCoord);
 
     if(currentPixelCoord.Equals(moveToPixel.Peek())) {
       // remove the reached pixel from the queue
       moveToPixel.Dequeue();
-      // transform the next pixel coordinate to a position and
-      // store it as the new position to move to
-      moveToPos = grid.Position(moveToPixel.Peek());
-
       // check if we changed to another tile
       // if so --> update current tile and set new target position
       Vector2Int newTile = grid.GetTileCoordinate(transform.position);
-      Debug.Log("Ghost - current tileCoord: " + currentTile.x + " " + currentTile.y);
       if(!currentTile.Equals(newTile)) {
         currentTile = newTile;
         // remove the reached tile from the queue
         Vector2Int moveTo = moveToTile.Dequeue();
+        currentDir = grid.GetDirectionAdjacentTiles(currentTile, moveTo);
+        Debug.Log("Ghost - new move to tile - moveTo: " + moveTo.x + " " + moveTo.y);
         AddPixelCoordMoves(moveTo);
-        AddTileMoves(moveToTile.Peek());
+        AddTileMoves(moveTo);
       }
+      // transform the next pixel coordinate to a position and
+      // store it as the new position to move to
+      moveToPos = grid.Position(moveToPixel.Peek());
+      Debug.Log("Ghost - new position to move to: " + moveToPos.x + " " + moveToPos.y);
     }
   }
 
@@ -120,21 +126,24 @@ public class GhostMovement : MonoBehaviour
   // returns the best future move
   Vector2Int GetFutureMove(Vector2Int departureTile, Grid.Dir dir) {
     // retrieve adjacentTiles
-    Vector2Int[] adjacentTiles = allowedDirs[(int)dir];
+    Vector2Int[] adjacentTiles = new Vector2Int[3];
+    System.Array.Copy(allowedDirs[(int)dir], adjacentTiles, 3) ;
     for(int i = 0; i < 3; i++) {
       // add departureTile to tile direction
       adjacentTiles[i] = adjacentTiles[i] + (departureTile);
+      Debug.Log(" adjacentTiles[i]: " + adjacentTiles[i].x + " " + adjacentTiles[i].y);
     }
-    Debug.Log("CHECK THIS - adjacentTiles: " + adjacentTiles);
-
+    Debug.Log("Ghost::GetFutureMove - departureTile: " + departureTile.x + " " + departureTile.y);
     // find the best move, most near to target tile
     int indexBestMove = -1;
     int smallestDistance = int.MaxValue;
     Vector2Int targetTile = GetTargetTile();
+    Debug.Log("Ghost::GetFutureMove - targetTile: " + targetTile.x + " " + targetTile.y);
     for(int i = 0; i < 3; i++) {
       if(grid.TileIsPath(adjacentTiles[i])) {
         int distance =
           grid.SquaredEuclideanDistance(targetTile, adjacentTiles[i]);
+          Debug.Log("Ghost::GetFutureMove - distance: " + distance);
         if(distance < smallestDistance) {
           smallestDistance = distance;
           indexBestMove = i;
@@ -142,6 +151,7 @@ public class GhostMovement : MonoBehaviour
       }
     } // end forloop
 
+    Debug.Log("best move index: " + indexBestMove + ", adjacentTiles[indexBestMove]:" + adjacentTiles[indexBestMove]);
     // return the best move
     return adjacentTiles[indexBestMove];
   }

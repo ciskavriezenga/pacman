@@ -222,7 +222,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentPos: {x: 15, y: 8.5}
-  speed: 0.1
+  speed: 0.2
   grid: {fileID: 2100403327}
   currentTile: {x: 0, y: 0}
 --- !u!50 &80093245
@@ -710,8 +710,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38b6081aebe2b49d6be674a3a27f53d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentPos: {x: 2.5, y: 30.5}
-  speed: 0.1
+  currentPos: {x: 5, y: 30.5}
+  speed: 0.2
   grid: {fileID: 2100403327}
   pacmanMov: {fileID: 80093244}
 --- !u!50 &1435026133
