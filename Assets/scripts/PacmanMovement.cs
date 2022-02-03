@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-// TODO - use with Vector2Int instead of TileCoord
+// TODO - use with Vector2Int instead of Coordinate
 public class PacmanMovement : MonoBehaviour
 {
   // current position of pacman, also used as start position
@@ -13,12 +13,13 @@ public class PacmanMovement : MonoBehaviour
   // reference to the grid object
   public Grid grid;
 
+  // TODO - make private and add getter
   // tile in the pacman maze grid
-  private TileCoordinate currentTile;
+  public Vector2Int currentTile;
   // current movement directions
   private Grid.Dir currentDir = Grid.Dir.Left;
   // target position
-  private Vector2 targetPos;
+  private Vector2 moveToPos;
 
   // Start is called before the first frame update
   void Start()
@@ -29,7 +30,7 @@ public class PacmanMovement : MonoBehaviour
     currentTile = grid.GetTileCoordinate(currentPos);
     Debug.Log("Pacman start tile: " + currentTile.x + " " + currentTile.y);
     // set new target position
-    SetNewTargetPos();
+    SetNewMoveToPos();
   }
 
   // Update is called once per frame
@@ -59,33 +60,33 @@ public class PacmanMovement : MonoBehaviour
 
   void FixedUpdate()
   {
-    currentPos = Vector2.MoveTowards(currentPos, targetPos, speed);
+    currentPos = Vector2.MoveTowards(currentPos, moveToPos, speed);
     // transform to view grid and pixelate
     transform.position = grid.SnapToPixel(currentPos);
 
     // Debug.Log("currentPos: " + currentPos.x + " " + currentPos.y);
     // Debug.Log("pixelctPos: " + transform.position.x + " " + transform.position.y);
-    // Debug.Log("targetPos: " + targetPos.x + " " + targetPos.y);
+    // Debug.Log("moveToPos: " + moveToPos.x + " " + moveToPos.y);
 
     // if tile changed, update current tile and set new target position
-    TileCoordinate tileCoord = grid.GetTileCoordinate(transform.position);
-    if(currentTile.Differs(tileCoord)) {
+    Vector2Int tileCoord = grid.GetTileCoordinate(transform.position);
+    if(!currentTile.Equals(tileCoord)) {
       currentTile = tileCoord;
-      SetNewTargetPos();
+      SetNewMoveToPos();
     }
   }
 
-  void SetNewTargetPos()
+  void SetNewMoveToPos()
   {
     // retrieve target tile based on current tile and current direction
-    TileCoordinate targetTile = grid.GetTargetTile(currentTile, currentDir);
+    Vector2Int targetTile = grid.GetAdjacentTile(currentTile, currentDir);
     // check if target tile is valid
     // if valid: retrieve target position in the target tile
     // else: set target position to current tile center
     if(grid.TileIsPath(targetTile)) {
-      targetPos = grid.GetTargetPos(targetTile, currentDir);
+      moveToPos = grid.GetMoveToPos(targetTile, currentDir);
     } else {
-      targetPos = grid.GetTileCenterPos(currentTile);
+      moveToPos = grid.GetCenterPos(currentTile);
     }
   }
 
@@ -93,12 +94,12 @@ public class PacmanMovement : MonoBehaviour
   {
     // no need to change if the currentDirection is the same
     if(currentDir != dir) {
-      TileCoordinate targetTile = grid.GetTargetTile(currentTile, dir);
+      Vector2Int targetTile = grid.GetAdjacentTile(currentTile, dir);
       if(grid.TileIsPath(targetTile)) {
         // store the new direction in currentDir to new dir
         currentDir = dir;
-        // update target tile and position
-        targetPos = grid.GetTargetPos(targetTile, currentDir);
+        // update move to position
+        moveToPos = grid.GetMoveToPos(targetTile, currentDir);
         return true;
       }
     }

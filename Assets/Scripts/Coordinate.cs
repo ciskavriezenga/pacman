@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public struct TileCoordinate
+public struct Coordinate
 {
   private int _x { get; set; }
   private int _y { get; set; }
@@ -22,13 +22,13 @@ public struct TileCoordinate
       }
   }
 
-  public TileCoordinate(int x, int y) {
+  public Coordinate(int x, int y) {
     _x = x;
     _y = y;
   }
 
   // ------------ add methods ------------
-  public void Add(TileCoordinate pos)
+  public void Add(Coordinate pos)
   {
     _x = _x + pos.x;
     _y = _y + pos.y;
@@ -43,11 +43,11 @@ public struct TileCoordinate
   }
 
   // ------------ comparison methods ------------
-  public bool Equals(TileCoordinate pos){
+  public bool Equals(Coordinate pos){
     return _x == pos.x && _y == pos.y;
   }
 
-  public bool Differs(TileCoordinate pos){
+  public bool Differs(Coordinate pos){
     return _x != pos.x || _y != pos.y;
   }
 

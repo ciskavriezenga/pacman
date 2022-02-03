@@ -15,20 +15,22 @@ public class Grid : MonoBehaviour
 
   private Color[] gridPixels;
 
-  private TileCoordinate[] directions = {
-    new TileCoordinate(0,1),  // up
-    new TileCoordinate(1,0),  // right
-    new TileCoordinate(0,-1), // down
-    new TileCoordinate(-1,0)  // left
+  public Vector2Int[] directions = {
+    new Vector2Int(0,1),  // up
+    new Vector2Int(1,0),  // right
+    new Vector2Int(0,-1), // down
+    new Vector2Int(-1,0)  // left
   };
 
   // TODO - maybe move to interface class Movement? or utility movement class?
   public enum Dir
   {
+    None = -1,
     Up = 0,
     Right = 1,
     Down = 2,
-    Left = 3
+    Left = 3,
+    Size = 4
   }
 
   private Vector2[] targetPosOnTile;
@@ -65,43 +67,124 @@ public class Grid : MonoBehaviour
   }
 
 
-  public TileCoordinate GetTileCoordinate(Vector2 pos)
+// ----------------------------------------------------------------------------
+// --------------- tile and position utility methods ------------------------
+// ----------------------------------------------------------------------------
+  public Vector2Int GetTileCoordinate(Vector2 pos)
   {
     // add 1 x and y offset to take the border into account
-    return new TileCoordinate((int) pos.x, (int) pos.y);
+    return new Vector2Int((int) pos.x, (int) pos.y);
   }
 
-  public TileCoordinate GetTargetTile(TileCoordinate currentTile, Dir dir) {
-    TileCoordinate tileDir = directions[(int)dir];
-    currentTile.Add(tileDir);
-    return currentTile;
-  }
-
-  public Vector2 GetTargetPos(TileCoordinate targetTile, Dir enterDir)
+  // returns target position given targetTile and enter Direction
+  public Vector2 GetMoveToPos(Vector2Int targetTile, Dir enterDir)
   {
-    // return target position given targetTile and enter Direction
-    return targetTile.Add(targetPosOnTile[(int) enterDir]);
-
+    Vector2 dirVector = targetPosOnTile[(int) enterDir];
+    // todo - can we simplify this, is dirVector a ref or copy?
+    return new Vector2(dirVector.x + targetTile.x, dirVector.y + targetTile.y);
   }
 
-  public Vector2 GetTileCenterPos(TileCoordinate tile) {
-    return tile.Add(0.5f, 0.5f);
+  // returns a vector2 with the position of the tile center
+  public Vector2 GetCenterPos(Vector2Int tile) {
+    return new Vector2(0.5f + tile.x, 0.5f + tile.y);
   }
 
-  public bool TileIsPath(TileCoordinate currentTile) {
-    int gridPixelsIndex = currentTile.x + currentTile.y * width;
-    bool isPath = gridPixels[gridPixelsIndex]  == Color.white; // Color.black
-    return isPath;
+
+// ----------------------------------------------------------------------------
+// --------------- Pixel utility methods -------------------------
+// ----------------------------------------------------------------------------
+  // returns a the coordinate of the pixel that corresponds to the position
+  // e.g. 8 pixels per tile --> floor(pos * 8)
+  public Vector2Int PixelCoordinate(Vector2 pos)
+  {
+    // blow up Vector2 to pixel level and take floor value
+    pos = pos * pixelateFactor;
+    Vector2Int pixelCoordinate = Vector2Int.FloorToInt(pos);
+    return pixelCoordinate;
   }
 
+  // returns a the position that corresponds to the pixel coordinate
+  // e.g. 8 pixels per tile --> pixelCoordinate to Vector2 and divide by 8
+  public Vector2 Position(Vector2Int pixelCoordinate) {
+    // convert Vector2Int to regular Vector2 and shrink again
+    Vector2 pos = (Vector2)pixelCoordinate;
+    pos = pos * invPixelateFactor;
+    return pos;
+  }
+
+  // returns a the position snapped to the pixel size
+  // for example e.g. 8 pixels per tile --> snap to 0.125 values
   public Vector2 SnapToPixel(Vector2 pos)
   {
-    // NOTE: pos is a copy, not a reference to the passed position
     // pixelate position: blow up, apply floor and shrink down again
-    pos.x = System.MathF.Floor(pos.x * pixelateFactor);
-    pos.y = System.MathF.Floor(pos.y * pixelateFactor);
-    return pos * invPixelateFactor;
+    Vector2Int pixelCoordinate = PixelCoordinate(pos);
+    return Position(pixelCoordinate);
   }
+
+
+// ----------------------------------------------------------------------------
+// --------------- tile and direction utility methods -------------------------
+// ----------------------------------------------------------------------------
+  // returns the to the currentTile adjacent tile based on the th
+  public Vector2Int GetAdjacentTile(Vector2Int currentTile, Dir dir) {
+    // NOTE: currentTile is a copy, not a reference to the passed Coordinate
+    Vector2Int tileDir = directions[(int)dir];
+    return currentTile + tileDir;
+  }
+
+  // returns the direction based on two adjacent tiles
+  public Dir GetDirectionAdjacentTiles(Vector2Int tile1, Vector2Int tile2) {
+    Vector2 tileDelta = tile2 - tile1;
+    // up
+    if(tileDelta.Equals(directions[0])) return Dir.Up;
+    // Right
+    if(tileDelta.Equals(directions[1])) return Dir.Right;
+    // down
+    if(tileDelta.Equals(directions[2])) return Dir.Down;
+    // left
+    if(tileDelta.Equals(directions[3])) return Dir.Left;
+
+    throw new System.Exception("Grid.GetDirection - direction = none");
+    return Dir.None;
+  }
+
+
+
+// ----------------------------------------------------------------------------
+// --------------- tile validity utility methods ------------------------------
+// ----------------------------------------------------------------------------
+  public bool TileIsPath(Vector2Int currentTile) {
+    int gridPixelsIndex = currentTile.x + currentTile.y * width;
+
+    if(gridPixelsIndex >= 0 && gridPixelsIndex < width * height) {
+      bool isPath = gridPixels[gridPixelsIndex]  == Color.white; // Color.black
+      return isPath;
+    }
+    return false;
+  }
+
+// ----------------------------------------------------------------------------
+// --------------- distnace utility methods -----------------------------------
+// ----------------------------------------------------------------------------
+
+  // distance
+  public int SquaredEuclideanDistance(Vector2Int tile1, Vector2Int tile2) {
+    int a = tile2.x - tile1.x;
+    int b = tile2.y - tile1.y;
+    return a * a + b * b;
+  }
+
+  public int ManhattanDistance(Vector2Int tile1, Vector2Int tile2) {
+    int a = tile2.x - tile1.x;
+    int b = tile2.y - tile1.y;
+    return System.Math.Abs(a) + System.Math.Abs(b);
+  }
+
+
+// ----------------------------------------------------------------------------
+// --------------- Tile map method -------------------------------------------
+// ----------------------------------------------------------------------------
+
 
   private void PlaceTiles()
   {
@@ -111,7 +194,7 @@ public class Grid : MonoBehaviour
     // also draw a border with rule tiles, to ensure correct display of border
     int size = width * height;
     for(int i = 0; i < size; i++) {
-      TileCoordinate tileCoord = new TileCoordinate(0,0);
+      Vector2Int tileCoord = new Vector2Int(0,0);
       tileCoord.y = i / width;
       tileCoord.x = i - (tileCoord.y * width); // * is cheaper than %
       // if tile coordinate is wall - add wall tile
@@ -120,8 +203,6 @@ public class Grid : MonoBehaviour
         tilemap.SetTile(pos, ruletile);
       }
     }
-
-
   }
 
 
