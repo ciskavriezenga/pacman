@@ -88,6 +88,9 @@ public class GhostMovement : MonoBehaviour
       Vector2Int newTile = grid.GetTileCoordinate(transform.position);
       if(!currentTile.Equals(newTile)) {
         currentTile = newTile;
+        // TODO - use moveToTile instead of queue
+        // TODO - use direction instead of queue
+        // - -split up GetFutureMove to retrieve index of best move and thereby direction
         // remove the reached tile from the queue
         Vector2Int moveTo = moveToTile.Dequeue();
         currentDir = grid.GetDirectionAdjacentTiles(currentTile, moveTo);
