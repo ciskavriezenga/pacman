@@ -10,10 +10,13 @@ public class Grid : MonoBehaviour
   //public UnityEngine.UI.RawImage gridImg;
   public Sprite gridImg;
   public string imgPath = "./assets/pacman.png";
-  public Tilemap tilemap;
-  public RuleTile ruletile;
+  public Tilemap tilemapWalls;
+  public Tilemap tilemapGhostDoor;
+  public RuleTile ruleTileRegWall;
+  public RuleTile ruleTileGhostHouse;
+  public RuleTile ruleTileGhostDoor;
 
-  private Color[] gridPixels;
+  private MazeTileTypes mazeTileTypes;
 
   public Vector2Int[] directions = {
     new Vector2Int(0,1),  // up
@@ -45,10 +48,7 @@ public class Grid : MonoBehaviour
     pixelateFactor = (float) numPixelsPerTile;
     invPixelateFactor = 1.0f / pixelateFactor;
 
-    // TODO - move to pacman movement? -
-    //        this also will depend on the implementation of the ghost movement
-    // targetPosOnTile is used to set the target position based on how pacman
-    // moves to the target tile
+    // TODO - add comments
     float edge = (float) (numPixelsPerTile - 1) / pixelateFactor;
     targetPosOnTile = new Vector2[4] {
       new Vector2(0.5f, 0.0f),  // entering tile from below
@@ -57,11 +57,8 @@ public class Grid : MonoBehaviour
       new Vector2(edge, 0.5f)   // entering tile from right
     };
 
-    // TODO - add safety check if file exists
-    byte[] imgData = System.IO.File.ReadAllBytes(imgPath);
-    Texture2D gridTexture2D = new Texture2D(width, height);
-    gridTexture2D.LoadImage(imgData);
-    gridPixels = gridTexture2D.GetPixels();
+    // create model for the maze tile types
+    mazeTileTypes = new MazeTileTypes(imgPath, width, height);
 
     PlaceTiles();
   }
@@ -154,13 +151,7 @@ public class Grid : MonoBehaviour
 // --------------- tile validity utility methods ------------------------------
 // ----------------------------------------------------------------------------
   public bool TileIsPath(Vector2Int currentTile) {
-    int gridPixelsIndex = currentTile.x + currentTile.y * width;
-
-    if(gridPixelsIndex >= 0 && gridPixelsIndex < width * height) {
-      bool isPath = gridPixels[gridPixelsIndex]  == Color.white; // Color.black
-      return isPath;
-    }
-    return false;
+    return mazeTileTypes.TileIsPath(currentTile);
   }
 
 // ----------------------------------------------------------------------------
@@ -189,7 +180,7 @@ public class Grid : MonoBehaviour
   private void PlaceTiles()
   {
     //Tilemap tmap = GetComponent<Tilemap>();
-    //TileBase tile = (TileBase) TileBase.CreateInstance("Assets/tiles/walls-inner.asset");// tilemap.GetTile(new Vector3Int(0, 31, 0));
+    //TileBase tile = (TileBase) TileBase.CreateInstance("Assets/tiles/walls-inner.asset");// tilemapWalls.GetTile(new Vector3Int(0, 31, 0));
 
     // also draw a border with rule tiles, to ensure correct display of border
     int size = width * height;
@@ -197,14 +188,31 @@ public class Grid : MonoBehaviour
       Vector2Int tileCoord = new Vector2Int(0,0);
       tileCoord.y = i / width;
       tileCoord.x = i - (tileCoord.y * width); // * is cheaper than %
+      Vector3Int pos = new Vector3Int(tileCoord.x, tileCoord.y, 0);
       // if tile coordinate is wall - add wall tile
-      if(!TileIsPath(tileCoord)) {
-        Vector3Int pos = new Vector3Int(tileCoord.x, tileCoord.y, 0);
-        tilemap.SetTile(pos, ruletile);
+      if(!mazeTileTypes.TileIsPath(tileCoord)) {
+        // place the corresponding wall tile
+        switch(mazeTileTypes.GetTileID(tileCoord))
+        {
+          case MazeTileTypes.TileID.RegWall:
+            tilemapWalls.SetTile(pos, ruleTileRegWall);
+            break;
+          case MazeTileTypes.TileID.GhostHouse:
+            tilemapWalls.SetTile(pos, ruleTileGhostHouse);
+            break;
+          case MazeTileTypes.TileID.GhostDoor:
+            tilemapWalls.SetTile(pos, ruleTileGhostHouse);
+            // TODO - position the door based on a seperate image,
+            //        so you can take the orientation into account
+            tilemapGhostDoor.SetTile(pos, ruleTileGhostDoor);
+            break;
+          default:
+            // default - do nothing
+            break;
+        }
       }
     }
   }
-
 
 
 }

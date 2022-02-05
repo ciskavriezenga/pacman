@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d1514134bc4fbd41bb739b1b9a49231, type: 3}
-  m_Name: walls-inner
+  m_Name: walls-regular
   m_EditorClassIdentifier: 
-  m_DefaultSprite: {fileID: 21300000, guid: bf1b9468284b648a79db9c2aa2af0b35, type: 3}
+  m_DefaultSprite: {fileID: 21300000, guid: 42f8d92a830a745f0b0865892844a0a3, type: 3}
   m_DefaultGameObject: {fileID: 0}
   m_DefaultColliderType: 2
   m_TilingRules:
