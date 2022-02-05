@@ -20,6 +20,7 @@ public class PacmanMovement : MonoBehaviour
   private Grid.Dir currentDir = Grid.Dir.Left;
   // target position
   private Vector2 moveToPos;
+  private Grid.Dir lastHitKeyDir = Grid.Dir.None;
 
   // Start is called before the first frame update
   void Start()
@@ -37,24 +38,43 @@ public class PacmanMovement : MonoBehaviour
   // no use of physics, so using Update instead of FixedUpdate for now
   void Update()
   {
-    // NOTE:
-    // - if multipe keys are pressed, left is favorised to down etc.
-    // - instead of caching the direction to press and only once check for validity
-    //   we check for each direction. E.g. when up and left are pressed and
-    //   heading left is not allowed but up is, we change our direction upwards
+    // cache the last hit key
+    CacheLastHitArrowKey();
+    // clear last hit key if the cached key equals a arrow key up event
+    ClearLastHitKey();
 
-    // TODO - prevent multiple key presses 2 directions issue
-    if (Input.GetKey(KeyCode.UpArrow)) {
-      if(ChangeDir(Grid.Dir.Up)) return;
+    // if there is a arrow key is cached, act on it
+    if(lastHitKeyDir != Grid.Dir.None) {
+      if(ChangeDir(lastHitKeyDir)) {
+        // we changed the direction, clear the key cache
+        lastHitKeyDir = Grid.Dir.None;
+      }
     }
-    if (Input.GetKey(KeyCode.RightArrow)) {
-      if(ChangeDir(Grid.Dir.Right)) return;
+  }
+
+  // caches the last hit key to lastHitKeyDir class member
+  void CacheLastHitArrowKey() {
+    if (Input.GetKeyDown(KeyCode.UpArrow)) {
+      lastHitKeyDir = Grid.Dir.Up;
     }
-    if (Input.GetKey(KeyCode.DownArrow)) {
-      if(ChangeDir(Grid.Dir.Down)) return;
+    if (Input.GetKeyDown(KeyCode.RightArrow)) {
+      lastHitKeyDir = Grid.Dir.Right;
     }
-    if(Input.GetKey(KeyCode.LeftArrow)) {
-      if(ChangeDir(Grid.Dir.Left)) return;
+    if (Input.GetKeyDown(KeyCode.DownArrow)) {
+      lastHitKeyDir = Grid.Dir.Down;
+    }
+    if(Input.GetKeyDown(KeyCode.LeftArrow)) {
+      lastHitKeyDir = Grid.Dir.Left;
+    }
+  }
+
+  // clears the cache of the last hit key if key up event equals the last hit key
+  void ClearLastHitKey() {
+    if (Input.GetKeyUp(KeyCode.UpArrow) && lastHitKeyDir == Grid.Dir.Up
+    || Input.GetKeyUp(KeyCode.RightArrow) && lastHitKeyDir == Grid.Dir.Right
+    || Input.GetKeyUp(KeyCode.DownArrow) && lastHitKeyDir == Grid.Dir.Down
+    || Input.GetKeyUp(KeyCode.LeftArrow) && lastHitKeyDir == Grid.Dir.Left) {
+      lastHitKeyDir = Grid.Dir.None;
     }
   }
 
@@ -63,10 +83,6 @@ public class PacmanMovement : MonoBehaviour
     currentPos = Vector2.MoveTowards(currentPos, moveToPos, speed);
     // transform to view grid and pixelate
     transform.position = grid.SnapToPixel(currentPos);
-
-    // Debug.Log("currentPos: " + currentPos.x + " " + currentPos.y);
-    // Debug.Log("pixelctPos: " + transform.position.x + " " + transform.position.y);
-    // Debug.Log("moveToPos: " + moveToPos.x + " " + moveToPos.y);
 
     // if tile changed, update current tile and set new target position
     Vector2Int tileCoord = grid.GetTileCoordinate(transform.position);

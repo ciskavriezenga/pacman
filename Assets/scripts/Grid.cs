@@ -141,8 +141,7 @@ public class Grid : MonoBehaviour
     // left
     if(tileDelta.Equals(directions[3])) return Dir.Left;
 
-    throw new System.Exception("Grid.GetDirection - direction = none");
-    return Dir.None;
+    throw new System.Exception("Grid.GetDirection - direction = none");    
   }
 
 
