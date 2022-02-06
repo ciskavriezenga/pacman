@@ -9,7 +9,8 @@ public class Grid : MonoBehaviour
   public int height;
   //public UnityEngine.UI.RawImage gridImg;
   public Sprite gridImg;
-  public string imgPath = "./assets/pacman.png";
+  public string imgPathMultiBg;
+  public string imgPathGhostHouse;
   public Tilemap tilemapWalls;
   public Tilemap tilemapGhostDoor;
   public RuleTile ruleTileRegWall;
@@ -17,6 +18,7 @@ public class Grid : MonoBehaviour
   public RuleTile ruleTileGhostDoor;
 
   private MazeTileTypes mazeTileTypes;
+  private MazeTileTypes mazeGhostHouseTileTypes;
 
   public readonly Vector2Int[] directions = {
     new Vector2Int(0,1),  // up
@@ -58,9 +60,11 @@ public class Grid : MonoBehaviour
     };
 
     // create model for the maze tile types
-    mazeTileTypes = new MazeTileTypes(imgPath, width, height);
+    mazeTileTypes = new MazeTileTypes(imgPathMultiBg, width, height);
+    ghostHouseTileTypes = new MazeTileTypes(imgPathGhostHouse, width, height);
 
-    PlaceTiles();
+    PlaceTiles(ref mazeTileTypes);
+    PlaceTiles(ref ghostHouseTileTypes);
   }
 
 
@@ -153,6 +157,17 @@ public class Grid : MonoBehaviour
     return mazeTileTypes.TileIsPath(currentTile);
   }
 
+  public bool GhostMoveUpForbidden(Vector2Int currentTile) {
+    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(currentTile);
+    return tileID == MazeTileTypes.TileID.NoUpward;
+  }
+
+  public bool WallIsGhostDoor(Vector2Int currentTile) {
+    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(currentTile);
+    return tileID == MazeTileTypes.TileID.GhostDoor;
+  }
+
+
 // ----------------------------------------------------------------------------
 // --------------- dinstance utility methods -----------------------------------
 // ----------------------------------------------------------------------------
@@ -176,7 +191,7 @@ public class Grid : MonoBehaviour
 // ----------------------------------------------------------------------------
 
 
-  private void PlaceTiles()
+  private void PlaceTiles(ref MazeTileTypes tileTypes)
   {
     //Tilemap tmap = GetComponent<Tilemap>();
     //TileBase tile = (TileBase) TileBase.CreateInstance("Assets/tiles/walls-inner.asset");// tilemapWalls.GetTile(new Vector3Int(0, 31, 0));
@@ -189,9 +204,9 @@ public class Grid : MonoBehaviour
       tileCoord.x = i - (tileCoord.y * width); // * is cheaper than %
       Vector3Int pos = new Vector3Int(tileCoord.x, tileCoord.y, 0);
       // if tile coordinate is wall - add wall tile
-      if(!mazeTileTypes.TileIsPath(tileCoord)) {
+      if(!tileTypes.TileIsPath(tileCoord)) {
         // place the corresponding wall tile
-        switch(mazeTileTypes.GetTileID(tileCoord))
+        switch(tileTypes.GetTileID(tileCoord))
         {
           case MazeTileTypes.TileID.RegWall:
             tilemapWalls.SetTile(pos, ruleTileRegWall);
@@ -200,7 +215,6 @@ public class Grid : MonoBehaviour
             tilemapWalls.SetTile(pos, ruleTileGhostHouse);
             break;
           case MazeTileTypes.TileID.GhostDoor:
-            tilemapWalls.SetTile(pos, ruleTileGhostHouse);
             // TODO - position the door based on a seperate image,
             //        so you can take the orientation into account
             tilemapGhostDoor.SetTile(pos, ruleTileGhostDoor);

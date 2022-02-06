@@ -72,21 +72,17 @@ public class Ghost : MonoBehaviour
     Grid.Dir.Right, // left --> right
   };
 
+  // 2d array with the allowd directions based on current direction
+  // prefered order up, left, down, right
   private Grid.Dir[][] allowedDirs = {
-    new Grid.Dir[] {Grid.Dir.Left, Grid.Dir.Up, Grid.Dir.Right},
-    new Grid.Dir[] {Grid.Dir.Up, Grid.Dir.Right, Grid.Dir.Down},
-    new Grid.Dir[] {Grid.Dir.Right, Grid.Dir.Down, Grid.Dir.Left},
-    new Grid.Dir[] {Grid.Dir.Down, Grid.Dir.Left, Grid.Dir.Up}
+    new Grid.Dir[] {Grid.Dir.Up, Grid.Dir.Left, Grid.Dir.Right}, // cur = R
+    new Grid.Dir[] {Grid.Dir.Up, Grid.Dir.Down, Grid.Dir.Right}, // cur = D
+    new Grid.Dir[] {Grid.Dir.Left, Grid.Dir.Down, Grid.Dir.Right}, // cur = L
+    new Grid.Dir[] {Grid.Dir.Up, Grid.Dir.Left, Grid.Dir.Down} // cur = U
   };
 
-  // 2d array to quickly retrieve the allowed directions based on current
-  // directions
-  // private Vector2Int[][] allowedDirs = {
-  //   new Vector2Int[] {new Vector2Int(-1,0), new Vector2Int(0,1), new Vector2Int(1,0)},
-  //   new Vector2Int[] {new Vector2Int(0,1), new Vector2Int(1,0), new Vector2Int(0,-1)},
-  //   new Vector2Int[] {new Vector2Int(1,0), new Vector2Int(0,-1), new Vector2Int(-1,0)},
-  //   new Vector2Int[] {new Vector2Int(0,-1), new Vector2Int(-1,0), new Vector2Int(0,1)}
-  // };
+
+
 
   // current tile and move
   public Vector2Int currentTile { get; private set; }
@@ -175,11 +171,14 @@ public class Ghost : MonoBehaviour
     int smallestDistance = int.MaxValue;
     for(int i = 0; i < 3; i++) {
       if(grid.TileIsPath(adjacentTiles[i])) {
-        int distance =
-          grid.SquaredEuclideanDistance(targetTile, adjacentTiles[i]);
-        if(distance < smallestDistance) {
-          smallestDistance = distance;
-          indexBestMove = i;
+        // only allow movement up if allowed
+        if(directions[i] != Grid.Dir.Up || !grid.GhostMoveUpForbidden(fromTile)) {
+          int distance =
+            grid.SquaredEuclideanDistance(targetTile, adjacentTiles[i]);
+          if(distance < smallestDistance) {
+            smallestDistance = distance;
+            indexBestMove = i;
+          }
         }
       }
     } // end forloop
@@ -198,8 +197,7 @@ public class Ghost : MonoBehaviour
       grid.directions[(int) directions[1]],
       grid.directions[(int) directions[2]]
     };
-    // TODO - remove outcommented code when done with refactor
-    // System.Array.Copy(allowedDirs[(int)dir], adjacentTiles, 3) ;
+
     // add the departure tile position to relative adjactentTiles
     for(int i = 0; i < 3; i++) {
       adjacentTiles[i] = adjacentTiles[i] + (departureTile);

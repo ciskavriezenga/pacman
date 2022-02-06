@@ -7,16 +7,27 @@ using UnityEngine.Tilemaps;
 // where the types are based on a given background image
 public class MazeTileTypes
 {
+  /*
+   * 0  black =    0,    0,    0        - not walkable  - None
+   * 1  white =    255,  255,  255      - walkable      - regular path
+   * 2  red =      255,  0,    0        - not walkable  - ghost house
+   * 3  green =    0,    255,  0        - walkable      - tunnel path
+   * 4  blue =     0,    0,    255      - not walkable  - regular wall
+   * 5  yellow =   255,  255,  0        - walkable      - no upper movement
+   * 6  cyan =     0,    255,  255      - not walkable  - ghost door
+   * 7  magenta =  255,  0,    255      - walkable      - empty
+   */
+
   public enum TileID
   {
-    RegWall = 0,    // black -  regular wall
-    RegPath = 1,    // white -  regular path
-    GhostHouse = 2, // red -    the ghost house - necessary for styling
-    Tunnel = 3,     // green -  the tunnel, path where the ghosts move slower
-    GhostDoor = 4,  // blue -   the exit of the ghost house
-    NoUpward = 5,   // yellow - path where upward turns are forbidden for the ghosts
-    EmptySlot1 = 6, // cyan -   ...
-    EmptySlot2 = 7  // magenta -...
+    None = 0,       // black
+    RegPath = 1,    // white
+    GhostHouse = 2, // red
+    Tunnel = 3,     // green
+    RegWall = 4,    // blue
+    NoUpward = 5,   // yellow
+    GhostDoor = 6,  // cyan
+    EmptySlot1 = 7  // magenta
   }
 
   // tile IDs, one for each tile in the maze image
@@ -71,16 +82,6 @@ public class MazeTileTypes
 
 
   private TileID TileIDForColor(Color color) {
-    /*
-     * 0  black =    0,    0,    0        - not walkable
-     * 1  white =    255,  255,  255      - walkable
-     * 2  red =      255,  0,    0        - not walkable
-     * 3  green =    0,    255,  0        - walkable
-     * 4  blue =     0,    0,    255      - not walkable
-     * 5  yellow =   255,  255,  0        - walkable
-     * 6  cyan =  0,    255,  255         - not walkable
-     * 7  magenta =     255,  0,    255   - walkable
-     */
     // NOTE: should not exceed 8, otherwise not in range of bytes
     for(byte i = 0; i < colorLookup.Length; i++) {
       if(color == colorLookup[i]){
