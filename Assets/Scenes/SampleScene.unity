@@ -340,7 +340,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 196160677}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f901a7b379db4c7aac745d432fa6569, type: 3}
+  m_Script: {fileID: 11500000, guid: 9240f51cb149241a3a0f41014ffc3c6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &244905764
@@ -692,7 +692,7 @@ GameObject:
   - component: {fileID: 1435026133}
   - component: {fileID: 1435026132}
   m_Layer: 0
-  m_Name: ghost
+  m_Name: blinky
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1386,8 +1386,3 @@ MonoBehaviour:
   ruleTileRegWall: {fileID: 11400000, guid: fe128ab3ba04549a3963be7f5d139fe6, type: 2}
   ruleTileGhostHouse: {fileID: 11400000, guid: 26ca706a676574c84a45eba325930ac6, type: 2}
   ruleTileGhostDoor: {fileID: 11400000, guid: b42a6ced3152243d8a2bf21a218533db, type: 2}
-  directions:
-  - {x: 0, y: 1}
-  - {x: 1, y: 0}
-  - {x: 0, y: -1}
-  - {x: -1, y: 0}

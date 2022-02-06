@@ -18,7 +18,7 @@ public class Grid : MonoBehaviour
 
   private MazeTileTypes mazeTileTypes;
 
-  public Vector2Int[] directions = {
+  public readonly Vector2Int[] directions = {
     new Vector2Int(0,1),  // up
     new Vector2Int(1,0),  // right
     new Vector2Int(0,-1), // down
@@ -141,7 +141,7 @@ public class Grid : MonoBehaviour
     // left
     if(tileDelta.Equals(directions[3])) return Dir.Left;
 
-    throw new System.Exception("Grid.GetDirection - direction = none");    
+    throw new System.Exception("Grid.GetDirection - direction = none");
   }
 
 
@@ -154,7 +154,7 @@ public class Grid : MonoBehaviour
   }
 
 // ----------------------------------------------------------------------------
-// --------------- distnace utility methods -----------------------------------
+// --------------- dinstance utility methods -----------------------------------
 // ----------------------------------------------------------------------------
 
   // distance

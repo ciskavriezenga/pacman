@@ -5,7 +5,7 @@ using UnityEngine.Tilemaps;
 
 // A model for the tile types in the pacman maze,
 // where the types are based on a given background image
-public class MazeTileTypes : MonoBehaviour
+public class MazeTileTypes
 {
   public enum TileID
   {
@@ -65,7 +65,6 @@ public class MazeTileTypes : MonoBehaviour
   public bool TileIsPath(Vector2Int tileCoord) {
     // bitshift the tile id 1 spot to the right
     TileID id = GetTileID(tileCoord);
-Debug.Log("TileID: " + id +  ", is path: "  + (((byte)id & 1) == 1));
     return ((byte)GetTileID(tileCoord) & 1) == 1;
   }
 
