@@ -15,7 +15,7 @@ public class MazeTileTypes
    * 4  blue =     0,    0,    255      - not walkable  - regular wall
    * 5  yellow =   255,  255,  0        - walkable      - no upper movement
    * 6  cyan =     0,    255,  255      - not walkable  - ghost door
-   * 7  magenta =  255,  0,    255      - walkable      - empty
+   * 7  magenta =  255,  0,    255      - walkable      - teleport
    */
 
   public enum TileID
@@ -27,7 +27,7 @@ public class MazeTileTypes
     RegWall = 4,    // blue
     NoUpward = 5,   // yellow
     GhostDoor = 6,  // cyan
-    EmptySlot1 = 7  // magenta
+    Teleport = 7  // magenta
   }
 
   // tile IDs, one for each tile in the maze image

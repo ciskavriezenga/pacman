@@ -3,48 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public struct GhostMove {
-  public Vector2Int tile { get; private set; }
-  public Grid.Dir direction;
-  private Vector2Int[] pixels;
-  private int pixelIndex;
-
-  public GhostMove(Vector2Int tile, Grid.Dir direction, ref Grid grid) {
-    this.tile = tile;
-    this.direction = direction;
-    pixelIndex = 0;
-    // fetch the pixel locations for this move
-    Vector2 edgePosition = grid.GetMoveToPos(tile, direction);
-    Vector2 centerPosition = grid.GetCenterPos(tile);
-    pixels = new Vector2Int[]{
-      grid.PixelCoordinate(edgePosition),
-      grid.PixelCoordinate(centerPosition)
-    };
-  }
-
-  public Vector2Int GetPixelMove()
-  {
-    return pixels[pixelIndex];
-  }
-
-  public bool NextPixel() {
-    Debug.Log("NextPixel - index: " + pixelIndex);
-    // change pixel index to second pixel, if current index is 0
-    if(pixelIndex == 0 ) {
-      pixelIndex = 1;
-      return true;
-    }
-    return false; // no next pixel
-  }
-
-  public void Log() {
-    Debug.Log("Ghostmove-Tile: " + tile
-      + ", direction: " + direction
-      + ", pixelIndex: " + pixelIndex
-      + ", pixels[0]: " + pixels[0]
-      + ", pixels[1]: " + pixels[1]);
-  }
-}
 
 public class Ghost : MonoBehaviour
 {
@@ -57,9 +15,6 @@ public class Ghost : MonoBehaviour
 
   // temp reference to Pacman - to test Blinky pathfinding
   public PacmanMovement pacmanMov;
-
-  // current movement direction
-  private Grid.Dir currentDir = Grid.Dir.None;
 
   // move to this position
   private Vector2 moveToPos;
@@ -86,12 +41,12 @@ public class Ghost : MonoBehaviour
 
   // current tile and move
   public Vector2Int currentTile { get; private set; }
-  GhostMove currentMove;
+  Move currentMove;
   // next tiles to move to
-  Queue<GhostMove> nextMoves = new Queue<GhostMove>();
+  Queue<Move> nextMoves = new Queue<Move>();
   // allows to let the ghosts generate moves further ahead
   //   which adds a delay to their movement
-  GhostMove movesLastMove;
+  Move movesLastMove;
 
   // Start is called before the first frame update
   void Start()
@@ -102,11 +57,10 @@ public class Ghost : MonoBehaviour
     pacmanMov = pacmanMov.GetComponent<PacmanMovement>();
     // set the current tile based on current position
     currentTile = grid.GetTileCoordinate(currentPos);
-    currentDir = Grid.Dir.Right;
 
     // add first move - start up
     // TODO - fix this setup step
-    currentMove = CreateSingleMove(currentTile, currentDir);
+    currentMove = CreateSingleMove(currentTile, Grid.Dir.Right);
     // generate the upcoming moves for the ghost - based on last generate move
     movesLastMove = currentMove;
     GenerateMoves();
@@ -136,7 +90,27 @@ public class Ghost : MonoBehaviour
   {
     // we are ready for the next pixel in the current move
     // if this does not exist, we need a new move
-    if(!currentMove.NextPixel()) {
+    if(currentMove.NextPixel()) {
+      // new pixel move is available
+      // do nothing, except when curren tile is teleport tile
+      if(grid.TileIsTeleport(currentMove.tile)) {
+        currentMove = nextMoves.Dequeue();
+        // empty nextMoves
+        nextMoves.Clear();
+
+        // TODO - wrap below in a method and clean up init in start as well
+        Vector2Int teleportPixel = currentMove.GetPixelMove();
+        currentPos = grid.Position(teleportPixel);
+        transform.position = grid.Position(teleportPixel);
+        currentTile = currentMove.tile;
+        currentMove = CreateSingleMove(currentTile, currentMove.direction);
+        // generate the upcoming moves for the ghost - based on last generate move
+        movesLastMove = currentMove;
+        GenerateMoves();      
+      }
+
+    } else {
+      // no new pixel move available - move is finalized
       // retrieve a new move from the moves queue
       currentMove = nextMoves.Dequeue();
     }
@@ -159,7 +133,7 @@ public class Ghost : MonoBehaviour
     nextMoves.Enqueue(movesLastMove);
   }
 
-  GhostMove CreateSingleMove(Vector2Int fromTile, Grid.Dir direction)
+  Move CreateSingleMove(Vector2Int fromTile, Grid.Dir direction)
   {
     Vector2Int targetTile = GetTargetTile();
     // get the tile of the new move
@@ -183,9 +157,9 @@ public class Ghost : MonoBehaviour
       }
     } // end forloop
 
-    // create a new GhostMove struct
-    // NOTE: corresponding pixels are calculated in GhostMove constructor
-    return new GhostMove(adjacentTiles[indexBestMove], directions[indexBestMove], ref grid);
+    // create a new Move struct
+    // NOTE: corresponding pixels are calculated in Move constructor
+    return new Move(adjacentTiles[indexBestMove], directions[indexBestMove], ref grid);
 
   }
 
@@ -201,6 +175,7 @@ public class Ghost : MonoBehaviour
     // add the departure tile position to relative adjactentTiles
     for(int i = 0; i < 3; i++) {
       adjacentTiles[i] = adjacentTiles[i] + (departureTile);
+      grid.WrapTile(ref adjacentTiles[i]);
     }
     // return resulting adjacent tiles
     return adjacentTiles;

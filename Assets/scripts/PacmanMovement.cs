@@ -85,10 +85,20 @@ public class PacmanMovement : MonoBehaviour
     transform.position = grid.SnapToPixel(currentPos);
 
     // if tile changed, update current tile and set new target position
-    Vector2Int tileCoord = grid.GetTileCoordinate(transform.position);
+    Vector2Int newTile = grid.GetTileCoordinate(transform.position);
 
-    if(!currentTile.Equals(tileCoord)) {
-      currentTile = tileCoord;
+    if(!currentTile.Equals(newTile)) {
+      currentTile = newTile;
+      // if this new tile is a teleport tile --> teleport :D
+      if(grid.TileIsTeleport(currentTile)) {        
+        // get next adjacent tile and wrap it
+        currentTile = grid.GetAdjacentTile(currentTile, currentDir);
+        grid.WrapTile(ref currentTile);
+        // reset current position to new tile position
+        currentPos = grid.GetMoveToPos(currentTile, currentDir);
+        // transform to view grid and pixelate
+        transform.position = grid.SnapToPixel(currentPos);
+      }
       SetNewMoveToPos();
     }
   }
@@ -96,12 +106,14 @@ public class PacmanMovement : MonoBehaviour
   void SetNewMoveToPos()
   {
     // retrieve target tile based on current tile and current direction
-    Vector2Int targetTile = grid.GetAdjacentTile(currentTile, currentDir);
+    Vector2Int moveTile = grid.GetAdjacentTile(currentTile, currentDir);
+
+    Debug.Log("moveTile: " + moveTile + " " + moveTile);
     // check if target tile is valid
     // if valid: retrieve target position in the target tile
     // else: set target position to current tile center
-    if(grid.TileIsPath(targetTile)) {
-      moveToPos = grid.GetMoveToPos(targetTile, currentDir);
+    if(grid.TileIsPath(moveTile)) {
+      moveToPos = grid.GetMoveToPos(moveTile, currentDir);
     } else {
       moveToPos = grid.GetCenterPos(currentTile);
     }
@@ -111,12 +123,12 @@ public class PacmanMovement : MonoBehaviour
   {
     // no need to change if the currentDirection is the same
     if(currentDir != dir) {
-      Vector2Int targetTile = grid.GetAdjacentTile(currentTile, dir);
-      if(grid.TileIsPath(targetTile)) {
+      Vector2Int moveTile = grid.GetAdjacentTile(currentTile, dir);
+      if(grid.TileIsPath(moveTile)) {
         // store the new direction in currentDir to new dir
         currentDir = dir;
         // update move to position
-        moveToPos = grid.GetMoveToPos(targetTile, currentDir);
+        moveToPos = grid.GetMoveToPos(moveTile, currentDir);
         return true;
       }
     }

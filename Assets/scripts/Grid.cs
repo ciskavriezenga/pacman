@@ -18,7 +18,7 @@ public class Grid : MonoBehaviour
   public RuleTile ruleTileGhostDoor;
 
   private MazeTileTypes mazeTileTypes;
-  private MazeTileTypes mazeGhostHouseTileTypes;
+  private MazeTileTypes ghostHouseTileTypes;
 
   public readonly Vector2Int[] directions = {
     new Vector2Int(0,1),  // up
@@ -153,20 +153,47 @@ public class Grid : MonoBehaviour
 // ----------------------------------------------------------------------------
 // --------------- tile validity utility methods ------------------------------
 // ----------------------------------------------------------------------------
-  public bool TileIsPath(Vector2Int currentTile) {
-    return mazeTileTypes.TileIsPath(currentTile);
+  public void WrapTile(ref Vector2Int tile)
+  {
+    // wrap x
+    if(tile.x >= width) {
+      tile.x -= width;
+    } else if(tile.x < 0) {
+      tile.x += width;
+    }
+    // wrap y
+    if(tile.y >= height) {
+      tile.y -= height;
+    } else if(tile.y < 0) {
+      tile.y += height;
+    }
   }
 
-  public bool GhostMoveUpForbidden(Vector2Int currentTile) {
-    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(currentTile);
+  public bool TileIsPath(Vector2Int tile)
+  {
+    // WrapTile(ref tile);
+    return mazeTileTypes.TileIsPath(tile);
+  }
+
+  public bool GhostMoveUpForbidden(Vector2Int tile)
+  {
+    // WrapTile(ref tile);
+    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
     return tileID == MazeTileTypes.TileID.NoUpward;
   }
 
-  public bool WallIsGhostDoor(Vector2Int currentTile) {
-    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(currentTile);
+  public bool WallIsGhostDoor(Vector2Int tile)
+  {
+    // WrapTile(ref tile);
+    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
     return tileID == MazeTileTypes.TileID.GhostDoor;
   }
 
+  public bool TileIsTeleport(Vector2Int tile)
+  {
+    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
+    return tileID == MazeTileTypes.TileID.Teleport;
+  }
 
 // ----------------------------------------------------------------------------
 // --------------- dinstance utility methods -----------------------------------
