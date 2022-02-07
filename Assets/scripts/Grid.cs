@@ -68,9 +68,9 @@ public class Grid : MonoBehaviour
   }
 
 
-// ----------------------------------------------------------------------------
-// --------------- tile and position utility methods ------------------------
-// ----------------------------------------------------------------------------
+// ==============================================================================
+// =============== tile and position utility methods ========================
+// ==============================================================================
   public Vector2Int GetTileCoordinate(Vector2 pos)
   {
     // add 1 x and y offset to take the border into account
@@ -91,9 +91,9 @@ public class Grid : MonoBehaviour
   }
 
 
-// ----------------------------------------------------------------------------
-// --------------- Pixel utility methods -------------------------
-// ----------------------------------------------------------------------------
+// ==============================================================================
+// =============== Pixel utility methods ========================-
+// ==============================================================================
   // returns a the coordinate of the pixel that corresponds to the position
   // e.g. 8 pixels per tile --> floor(pos * 8)
   public Vector2Int PixelCoordinate(Vector2 pos)
@@ -123,9 +123,9 @@ public class Grid : MonoBehaviour
   }
 
 
-// ----------------------------------------------------------------------------
-// --------------- tile and direction utility methods -------------------------
-// ----------------------------------------------------------------------------
+// ==============================================================================
+// =============== tile and direction utility methods ========================-
+// ==============================================================================
   // returns the to the currentTile adjacent tile based on the th
   public Vector2Int GetAdjacentTile(Vector2Int currentTile, Dir dir) {
     // NOTE: currentTile is a copy, not a reference to the passed Coordinate
@@ -150,9 +150,9 @@ public class Grid : MonoBehaviour
 
 
 
-// ----------------------------------------------------------------------------
-// --------------- tile validity utility methods ------------------------------
-// ----------------------------------------------------------------------------
+// ==============================================================================
+// =============== tile validity utility methods =============================-
+// ==============================================================================
   public void WrapTile(ref Vector2Int tile)
   {
     // wrap x
@@ -175,14 +175,14 @@ public class Grid : MonoBehaviour
     return mazeTileTypes.TileIsPath(tile);
   }
 
-  public bool GhostMoveUpForbidden(Vector2Int tile)
+  public bool TileGhostNoUpward(Vector2Int tile)
   {
     // WrapTile(ref tile);
     MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
     return tileID == MazeTileTypes.TileID.NoUpward;
   }
 
-  public bool WallIsGhostDoor(Vector2Int tile)
+  public bool TileIsGhostDoor(Vector2Int tile)
   {
     // WrapTile(ref tile);
     MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
@@ -195,9 +195,19 @@ public class Grid : MonoBehaviour
     return tileID == MazeTileTypes.TileID.Teleport;
   }
 
-// ----------------------------------------------------------------------------
-// --------------- dinstance utility methods -----------------------------------
-// ----------------------------------------------------------------------------
+  public bool TileIsTunnel(Vector2Int tile)
+  {
+    MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
+    return tileID == MazeTileTypes.TileID.Tunnel;
+  }
+
+  public MazeTileTypes.TileID GetTileType(Vector2Int tile) {
+    return mazeTileTypes.GetTileID(tile);
+  }
+
+// ==============================================================================
+// =============== dinstance utility methods ===================================
+// ==============================================================================
 
   // distance
   public int SquaredEuclideanDistance(Vector2Int tile1, Vector2Int tile2) {
@@ -213,9 +223,9 @@ public class Grid : MonoBehaviour
   }
 
 
-// ----------------------------------------------------------------------------
-// --------------- Tile map method -------------------------------------------
-// ----------------------------------------------------------------------------
+// ==============================================================================
+// =============== Tile map method ==========================================-
+// ==============================================================================
 
 
   private void PlaceTiles(ref MazeTileTypes tileTypes)
@@ -233,8 +243,7 @@ public class Grid : MonoBehaviour
       // if tile coordinate is wall - add wall tile
       if(!tileTypes.TileIsPath(tileCoord)) {
         // place the corresponding wall tile
-        switch(tileTypes.GetTileID(tileCoord))
-        {
+        switch(tileTypes.GetTileID(tileCoord)) {
           case MazeTileTypes.TileID.RegWall:
             tilemapWalls.SetTile(pos, ruleTileRegWall);
             break;

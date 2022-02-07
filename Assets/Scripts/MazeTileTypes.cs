@@ -67,16 +67,16 @@ public class MazeTileTypes
   }
 
   // returns the tileID at the given tile coordinate
-  public TileID GetTileID(Vector2Int tileCoord) {
-    int gridPixelsIndex = tileCoord.x + (tileCoord.y * width);
+  public TileID GetTileID(Vector2Int tile) {
+    int gridPixelsIndex = tile.x + (tile.y * width);
     return tileIDs[gridPixelsIndex];
   }
 
   // returns true if the tile coordinate corresponds to a walkable path
-  public bool TileIsPath(Vector2Int tileCoord) {
+  public bool TileIsPath(Vector2Int tile) {
     // bitshift the tile id 1 spot to the right
-    TileID id = GetTileID(tileCoord);
-    return ((byte)GetTileID(tileCoord) & 1) == 1;
+    TileID id = GetTileID(tile);
+    return ((byte)GetTileID(tile) & 1) == 1;
   }
 
 

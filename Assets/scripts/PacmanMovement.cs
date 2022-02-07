@@ -90,14 +90,8 @@ public class PacmanMovement : MonoBehaviour
     if(!currentTile.Equals(newTile)) {
       currentTile = newTile;
       // if this new tile is a teleport tile --> teleport :D
-      if(grid.TileIsTeleport(currentTile)) {        
-        // get next adjacent tile and wrap it
-        currentTile = grid.GetAdjacentTile(currentTile, currentDir);
-        grid.WrapTile(ref currentTile);
-        // reset current position to new tile position
-        currentPos = grid.GetMoveToPos(currentTile, currentDir);
-        // transform to view grid and pixelate
-        transform.position = grid.SnapToPixel(currentPos);
+      if(grid.TileIsTeleport(currentTile)) {
+        Teleport();
       }
       SetNewMoveToPos();
     }
@@ -108,7 +102,6 @@ public class PacmanMovement : MonoBehaviour
     // retrieve target tile based on current tile and current direction
     Vector2Int moveTile = grid.GetAdjacentTile(currentTile, currentDir);
 
-    Debug.Log("moveTile: " + moveTile + " " + moveTile);
     // check if target tile is valid
     // if valid: retrieve target position in the target tile
     // else: set target position to current tile center
@@ -136,4 +129,14 @@ public class PacmanMovement : MonoBehaviour
     return false;
   }
 
+  void Teleport()
+  {
+    // get next adjacent tile and wrap it
+    currentTile = grid.GetAdjacentTile(currentTile, currentDir);
+    grid.WrapTile(ref currentTile);
+    // reset current position to new tile position
+    currentPos = grid.GetMoveToPos(currentTile, currentDir);
+    // transform to view grid and pixelate
+    transform.position = grid.SnapToPixel(currentPos);
+  }
 }

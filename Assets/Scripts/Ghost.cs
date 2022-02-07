@@ -6,10 +6,36 @@ using UnityEngine;
 
 public class Ghost : MonoBehaviour
 {
+  public enum ChaseMode
+  {
+    TargetPacman = 0, // regular Blinky behaviour
+    Frightened = 1,
+    Chase = 2
+  }
+  /*
+   * in range x [0, 27], width = 28 and y [0, 30], height = 31
+   * scatter tile Blinky: x = 25, y = 32
+   * scatter tile Pinky: ..
+   * scatter tile ...: ...
+   * scatter tile ...: ...
+   */
+  public Transform scatterPos;
+  private Vector2Int scatterTile;
   // current position of pacman, also used as start position
   public Vector2 currentPos = new Vector2(13.875f, 7.625f);
-  // speed of pacman
-  public float speed;
+  // currentSpeed of pacman
+  private float currentSpeed;
+  public float slowDownSpeedMultiplier;
+  public float normalSpeed;
+  private bool isSlowedDown = false;
+
+  // chase modes e.g. target pacman (Blinky)
+  public ChaseMode chaseMode = ChaseMode.TargetPacman;
+  // ghost mode, either scatter, frightened, chase
+  public GameManager gameManager;
+  public GhostMode currentGhostMode;
+
+
   // reference to the grid object
   public Grid grid;
 
@@ -37,8 +63,6 @@ public class Ghost : MonoBehaviour
   };
 
 
-
-
   // current tile and move
   public Vector2Int currentTile { get; private set; }
   Move currentMove;
@@ -48,6 +72,11 @@ public class Ghost : MonoBehaviour
   //   which adds a delay to their movement
   Move movesLastMove;
 
+
+// =============================================================================
+// =============== Initialize methods ==========================================
+// =============================================================================
+
   // Start is called before the first frame update
   void Start()
   {
@@ -55,8 +84,18 @@ public class Ghost : MonoBehaviour
     grid = grid.GetComponent<Grid>();
     // fetch direct reference to PacmanMovement object
     pacmanMov = pacmanMov.GetComponent<PacmanMovement>();
+    // fetch direct reference to GameManager object;
+    gameManager = gameManager.GetComponent<GameManager>();
+
+    // cache the current ghost mode
+    currentGhostMode = gameManager.currentGhostMode;
+
+    // transform scatter pos to scatter TileCoordscatterTile
+    scatterTile = grid.GetTileCoordinate(scatterPos.position);
     // set the current tile based on current position
     currentTile = grid.GetTileCoordinate(currentPos);
+    // set currentSpeed based on the normal speed value
+    currentSpeed = normalSpeed;
 
     // add first move - start up
     // TODO - fix this setup step
@@ -69,72 +108,74 @@ public class Ghost : MonoBehaviour
     moveToPos = grid.Position(currentMove.GetPixelMove());
   }
 
+// =============================================================================
+// =============== Update methods ==============================================
+// =============================================================================
+
   // Update is called once per frame
   void FixedUpdate()
   {
-    // move towards target position
-    currentPos = Vector2.MoveTowards(currentPos, moveToPos, speed);
+    // move currentPos closer towards target position
+    currentPos = Vector2.MoveTowards(currentPos, moveToPos, currentSpeed);
 
-    // get the coordinate of pixel corresponding to the current position
+    // get the coordinate of the pixel corresponding to the current position
     Vector2Int currentPixelCoord = grid.PixelCoordinate(currentPos);
+
     // transform the pixel coordinate back to the floating point position
+    // and update the position of the ghost
     transform.position = grid.Position(currentPixelCoord);
 
-    // if the current pixel coordinate corresponds to the current pixel move
+    // if the current pixel coordinate corresponds to the current pixel
+    // coordinate in our current move --> we reached a pixel target
+    // thus, we can update our current move or retrieve a new one
     if(currentPixelCoord.Equals(currentMove.GetPixelMove())) {
-      UpdateMoves();
+      UpdateMove();
     }
   }
 
-  void UpdateMoves()
+  void UpdateMove()
   {
-    // we are ready for the next pixel in the current move
+    // we are ready for the next pixel target coordinate in the current move
     // if this does not exist, we need a new move
     if(currentMove.NextPixel()) {
-      // new pixel move is available
-      // do nothing, except when curren tile is teleport tile
-      if(grid.TileIsTeleport(currentMove.tile)) {
-        currentMove = nextMoves.Dequeue();
-        // empty nextMoves
-        nextMoves.Clear();
-
-        // TODO - wrap below in a method and clean up init in start as well
-        Vector2Int teleportPixel = currentMove.GetPixelMove();
-        currentPos = grid.Position(teleportPixel);
-        transform.position = grid.Position(teleportPixel);
-        currentTile = currentMove.tile;
-        currentMove = CreateSingleMove(currentTile, currentMove.direction);
-        // generate the upcoming moves for the ghost - based on last generate move
-        movesLastMove = currentMove;
-        GenerateMoves();      
+      // there is a new pixel target coordination available
+      // but did we reached a new tile?
+      currentTile = grid.GetTileCoordinate(transform.position);
+      if(currentTile == currentMove.tile) {
+        // generate a new move
+        GenerateMoves();
+        // reached a new tile --> process its type (teleport, slower speed, ..)
+        ProcessCurrentTileType();
       }
-
     } else {
       // no new pixel move available - move is finalized
       // retrieve a new move from the moves queue
       currentMove = nextMoves.Dequeue();
     }
-    // check if we reached the next tile
-    currentTile = grid.GetTileCoordinate(transform.position);
-    if(currentTile == currentMove.tile) {
-      // add a new move based on last move in queue
-      GenerateMoves();
-    }
+
     // transform the next pixel coordinate to a position and
     // store it as the new position to move to
     moveToPos = grid.Position(currentMove.GetPixelMove());
   }
 
+// =============================================================================
+// =============== Generate moves methods ======================================
+// =============================================================================
+
   void GenerateMoves()
   {
     // TODO - use a numMovesAhead variable
     //        to store more or less moves ahead in time
+
+    // ghosts generate moves ahead in time
+    // therefore, add a new move based on last move in our queue
     movesLastMove = CreateSingleMove(movesLastMove.tile, movesLastMove.direction);
     nextMoves.Enqueue(movesLastMove);
   }
 
   Move CreateSingleMove(Vector2Int fromTile, Grid.Dir direction)
   {
+    // TODO - add check if frightened - up tile movement is allowed!
     Vector2Int targetTile = GetTargetTile();
     // get the tile of the new move
     // retrieve adjacentTiles
@@ -146,7 +187,7 @@ public class Ghost : MonoBehaviour
     for(int i = 0; i < 3; i++) {
       if(grid.TileIsPath(adjacentTiles[i])) {
         // only allow movement up if allowed
-        if(directions[i] != Grid.Dir.Up || !grid.GhostMoveUpForbidden(fromTile)) {
+        if(directions[i] != Grid.Dir.Up || !grid.TileGhostNoUpward(fromTile)) {
           int distance =
             grid.SquaredEuclideanDistance(targetTile, adjacentTiles[i]);
           if(distance < smallestDistance) {
@@ -181,10 +222,95 @@ public class Ghost : MonoBehaviour
     return adjacentTiles;
   }
 
+// =============================================================================
+// =============== Proces tile type methods ====================================
+// =============================================================================
+
+  // processes the current tile type if necessary
+  void ProcessCurrentTileType() {
+    MazeTileTypes.TileID tileID = grid.GetTileType(currentTile);
+
+    switch(tileID) {
+      case MazeTileTypes.TileID.Teleport: {
+        Teleport();
+        break;
+      } // end case teleport
+      case MazeTileTypes.TileID.Tunnel: {
+        SlowDownSpeed();
+        break;
+      } // end case tunnel
+      default: {
+        ResetSpeed();
+        break;
+      } // end default case
+    } // end switch tileID
+  }
+
+  // teleports the gost to the otherside
+  void Teleport(){
+    currentMove = nextMoves.Dequeue();
+    // reset moves
+    ResetMoves(currentMove);
+  }
+  void ResetMoves(Move currentMove) {
+    // empty nextMoves
+    nextMoves.Clear();
+    Vector2Int teleportPixel = currentMove.GetPixelMove();
+    currentPos = grid.Position(teleportPixel);
+    transform.position = grid.Position(teleportPixel);
+    currentTile = currentMove.tile;
+    currentMove = CreateSingleMove(currentTile, currentMove.direction);
+    // generate the upcoming moves for the ghost - based on last generate move
+    movesLastMove = currentMove;
+    GenerateMoves();
+  }
+
+  // slows down current speed based on normal speed an slowDownSpeedMultiplier
+  void SlowDownSpeed()
+  {
+    if(!isSlowedDown) {
+      isSlowedDown = true;
+      currentSpeed = normalSpeed * slowDownSpeedMultiplier;
+    }
+  }
+
+  // resets current speed based on normal speed value
+  void ResetSpeed() {
+    if(isSlowedDown) {
+      // reset speed
+      isSlowedDown = false;
+      currentSpeed = normalSpeed;
+    }
+  }
+
+// =============================================================================
+// =============== Other methods ===============================================
+// =============================================================================
+
+  // returns the target tile -
+  // TODO - method returns path based on ghosttype
   Vector2Int GetTargetTile()
   {
-    // TODO - override in subclases
-    return pacmanMov.currentTile;
+    // return the tile that corresponds to the current mode
+    // NOTE: Ghosts use a pseudo-random number generator (PRNG) to pick a way
+    // to turn at each intersection when frightened. - no target tile needed
+    // therefore only two relavnt options: either scatter or Chase
+    if(currentGhostMode == GhostMode.Chase) {
+      // TODO - use chaseMode in switch
+      return pacmanMov.currentTile;
+    }
+    return scatterTile;
   }
+
+  public void SwitchMode(GhostMode newGhostMode) {
+    Debug.Log("*** Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
+    // TODO add functionality to trigger direction switch only when necessary
+    // TODO - switch direction method and method call
+    // cache the new ghost mode
+    currentGhostMode = newGhostMode;
+    ResetMoves(currentMove);
+  }
+
+
 
 }
