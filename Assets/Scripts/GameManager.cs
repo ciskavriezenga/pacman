@@ -29,22 +29,30 @@ public class GameManager : MonoBehaviour
   {
     countdownTime-= Time.deltaTime;
     if(countdownTime <= 0) {
-      // TODO - fix according to original pacman
-      // increment ghost mode
-      int tempGhostMode = (int)currentGhostMode + 1;
-      // if the num modes are exceded - wrap
-      if(tempGhostMode >= (int)GhostMode.NumModes) {
-        tempGhostMode -= (int)GhostMode.NumModes;
-      }
-      currentGhostMode = (GhostMode) tempGhostMode;
-
+      NextGhostMode();
       // reset the timer according to the new updated ghostMode
-      ResetCountdown();
-
+      ResetGhostModeCountdown();
     }
   }
 
-  void ResetCountdown() {
+  void NextGhostMode()
+  {
+    // TODO - fix according to original pacman
+    // increment ghost mode
+    int tempGhostMode = (int)currentGhostMode + 1;
+    // if the num modes are exceded - wrap
+    if(tempGhostMode >= (int)GhostMode.NumModes) {
+      tempGhostMode -= (int)GhostMode.NumModes;
+    }
+    currentGhostMode = (GhostMode) tempGhostMode;
+    // update the ghostmode for each ghost
+    for(int i = 0; i < ghosts.Length; i++) {
+      ghosts[i].SwitchMode(currentGhostMode);
+    }
+  }
+  // reset timer
+  void ResetGhostModeCountdown()
+  {
     switch(currentGhostMode) {
       case GhostMode.Chase:
         countdownTime = (float)chaseDuration;
@@ -56,13 +64,8 @@ public class GameManager : MonoBehaviour
         countdownTime = (float)frightenedDuration;
         break;
       default:
-        throw new System.Exception("GameManager.ResetCountdown " +
+        throw new System.Exception("GameManager.ResetGhostModeCountdown " +
           "- invalid ghostMode.");
-    }
-    Debug.Log("GameManager.ResetCountDown - ghosts.Length" + ghosts.Length);
-    // update the ghostmode for each ghost
-    for(int i = 0; i < ghosts.Length; i++) {
-      ghosts[i].SwitchMode(currentGhostMode);
     }
   }
 
