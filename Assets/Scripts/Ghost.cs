@@ -304,13 +304,31 @@ public class Ghost : MonoBehaviour
 
   public void SwitchMode(GhostMode newGhostMode) {
     Debug.Log("*** Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
-    // TODO add functionality to trigger direction switch only when necessary
-    // TODO - switch direction method and method call
+
+    /*
+     * Ghosts are forced to reverse direction by the system anytime the
+     * mode changes from:
+     *  • chase-to-scatter
+     *  • chase-tofrightened
+     *  • scatter-to-chase
+     *  • scatter-to-frightened.
+     * Ghosts do not reverse direction when:
+     *  • frightened - chase
+     *  • frightened - scatter
+     * Reference: The Pacman Dosier - Gamasutra
+     */
+    if(currentGhostMode != GhostMode.Frightened) {
+      SwitchDirection(ref currentMove);
+    }
     // cache the new ghost mode
     currentGhostMode = newGhostMode;
+
     ResetMoves(currentMove);
   }
 
+  void SwitchDirection(ref Move move) {
+    move.direction = oppositeDirs[(int) move.direction];
+  }
 
 
 }

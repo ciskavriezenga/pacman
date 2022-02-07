@@ -986,9 +986,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ad1c21c1ffd74586a093150d901f46a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chaseDuration: 10
-  scatterDuration: 10
-  frightenedDuration: 10
+  chaseDuration: 3
+  scatterDuration: 3
+  frightenedDuration: 3
   ghosts:
   - {fileID: 1435026132}
 --- !u!1 &1587313931
