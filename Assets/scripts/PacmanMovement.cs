@@ -17,7 +17,7 @@ namespace PM {
     // tile in the pacman maze grid
     public Vector2Int currentTile;
     // current movement directions
-    private Grid.Dir currentDir = Grid.Dir.Left;
+    public Grid.Dir currentDir {get; private set;} = Grid.Dir.Left;
     // target position
     private Vector2 moveToPos;
     private Grid.Dir lastHitKeyDir = Grid.Dir.None;

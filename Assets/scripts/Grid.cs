@@ -134,6 +134,18 @@ namespace PM {
       return currentTile + tileDir;
     }
 
+    public Vector2Int GetTileInDirection(Vector2Int currentTile, Dir dir,
+      int numTilesAway) {
+      // NOTE: currentTile is a copy, not a reference to the passed Coordinate
+      Vector2Int tileDir = directions[(int)dir];
+      tileDir = tileDir * numTilesAway;
+      Debug.Log("GetTileInDirection - currenTile: " + currentTile);
+      Debug.Log("                   - dir: " + dir);
+      Debug.Log("                   - numTilesAway: " + numTilesAway);
+      Debug.Log("                   - result: " + (currentTile + tileDir));
+      return currentTile + tileDir;
+    }
+
     // returns the direction based on two adjacent tiles
     public Dir GetDirectionAdjacentTiles(Vector2Int tile1, Vector2Int tile2) {
       Vector2 tileDelta = tile2 - tile1;

@@ -292,9 +292,9 @@ using UnityEngine;
       }
     }
 
-  // =============================================================================
-  // =============== Other methods ===============================================
-  // =============================================================================
+// =============================================================================
+// =============== Target tile methods =========================================
+// =============================================================================
 
     // returns the target tile -
     // TODO - method returns path based on ghosttype
@@ -338,7 +338,8 @@ using UnityEngine;
            *        error in the logic code that calculates Pinky's offset from
            *        Pac-Man"
            */
-          return pacmanMov.currentTile;
+          return grid.GetTileInDirection(pacmanMov.currentTile, pacmanMov.currentDir,
+            4);
 
         case ChaseScheme.Collaborate:
           /*
@@ -366,6 +367,9 @@ using UnityEngine;
       }
     }
 
+// =============================================================================
+// =============== Other methods ===============================================
+// =============================================================================
     public void SwitchMode(GhostMode newGhostMode) {
       Debug.Log("*** Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
 
