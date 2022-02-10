@@ -6,7 +6,7 @@ using UnityEngine;
   namespace PM {
   public class Ghost : MonoBehaviour
   {
-    public enum ChaseMode
+    public enum ChaseScheme
     {
       TargetPacman = 0,   // regular Blinky behaviour
       AheadOfPacman = 1,  // regular Pinky behaviour
@@ -31,7 +31,7 @@ using UnityEngine;
     private bool isSlowedDown = false;
 
     // chase modes e.g. target pacman (Blinky)
-    public ChaseMode chaseMode = ChaseMode.TargetPacman;
+    public ChaseScheme chaseScheme = ChaseScheme.TargetPacman;
     // ghost mode, either scatter, frightened, chase
     public GameManager gameManager;
     public GhostMode currentGhostMode;
@@ -305,8 +305,7 @@ using UnityEngine;
       // to turn at each intersection when frightened. - no target tile needed
       // therefore only two relavnt options: either scatter or Chase
       if(currentGhostMode == GhostMode.Chase) {
-        // TODO - use chaseMode in switch
-        return GetGhostTypeTargetTile();   
+        return GetGhostTypeTargetTile();
       }
       return scatterTile;
     }
@@ -315,22 +314,55 @@ using UnityEngine;
     {
       Vector2Int targetTile = new Vector2Int(0,0);
 
-      switch(chaseMode) {
-        case ChaseMode.TargetPacman:
+      /*
+       * NOTE:  all information below about the schemes comes from the source:
+       *        https://www.gamasutra.com/view/feature/3938/the_pacman_dossier.php?print=1
+       */
+      switch(chaseScheme) {
+        case ChaseScheme.TargetPacman:
+          /*
+           * NOTE:  Blinky's targeting scheme
+           *        "Blinky's is the most simple and direct, using Pac-Man's
+           *        current tile as his target."
+           */
+
           return pacmanMov.currentTile;
 
-        case ChaseMode.AheadOfPacman:
+        case ChaseScheme.AheadOfPacman:
+          /*
+           * NOTE:  Pinky's targeting scheme
+           *        "Pinky selects an offset four tiles away from Pac-Man in
+           *        the direction Pac-Man is currently moving ...
+           *        if Pac-Man is moving up, Pinky's target tile will be four
+           *        tiles up and four tiles to the left. ... due to a subtle
+           *        error in the logic code that calculates Pinky's offset from
+           *        Pac-Man"
+           */
           return pacmanMov.currentTile;
 
-        case ChaseMode.Collaborate:
+        case ChaseScheme.Collaborate:
+          /*
+           * NOTE:  Inky's targeting scheme
+           *        1. Draw line from Bliny to 2 tiles in front of Pac-man
+           *        2. Double this line --> resulting end of line = target tile
+           *        "Inky's offset calculation from Pac-Man is two tiles up and
+           *         two tiles left when Pac-Man is moving up."
+           */
           return pacmanMov.currentTile;
-
-        case ChaseMode.CircleAround:
+        case ChaseScheme.CircleAround:
+          /*
+           * Note:  Clyde's targeting scheme
+           *        "When more than eight tiles away, he uses Pac-Man's tile as
+           *         his target ...
+           *         If Clyde is closer than eight tiles away, he switches to
+           *        his scatter mode target instead ... until he is far enough
+           *         away to target Pac-Man again.
+           */
           return pacmanMov.currentTile;
 
         default:
           throw new System.Exception("Ghost.GetGhostTypeTargetTile - " +
-            "ChaseMode not found.");
+            "ChaseScheme not found.");
       }
     }
 

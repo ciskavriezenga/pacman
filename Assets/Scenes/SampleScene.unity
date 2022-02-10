@@ -804,7 +804,7 @@ MonoBehaviour:
   currentPos: {x: 3.5, y: 31.5}
   slowDownSpeedMultiplier: 0.333
   normalSpeed: 0.2
-  chaseMode: 0
+  chaseScheme: 0
   gameManager: {fileID: 1528954698}
   currentGhostMode: 0
   grid: {fileID: 2100403327}
