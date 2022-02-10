@@ -22,6 +22,7 @@ using UnityEngine;
      */
     public Transform scatterPos;
     private Vector2Int scatterTile;
+    public Grid.Dir startDirection = Grid.Dir.Right;
     // current position of pacman, also used as start position
     public Vector2 currentPos = new Vector2(13.875f, 7.625f);
     // currentSpeed of pacman
@@ -35,7 +36,9 @@ using UnityEngine;
     // ghost mode, either scatter, frightened, chase
     public GameManager gameManager;
     public GhostMode currentGhostMode;
-
+    // the ghost that will be used in case of the collaborate scheme
+    // which corresponds to the original Inky behavior based on Blinky's pos
+    public Ghost wingman;
 
     // reference to the grid object
     public Grid grid;
@@ -100,7 +103,7 @@ using UnityEngine;
 
       // add first move - start up
       // TODO - fix this setup step
-      currentMove = CreateSingleMove(currentTile, Grid.Dir.Right);
+      currentMove = CreateSingleMove(currentTile, startDirection);
       // generate the upcoming moves for the ghost - based on last generate move
       movesLastMove = currentMove;
       GenerateMoves();
@@ -354,7 +357,18 @@ using UnityEngine;
            *        "Inky's offset calculation from Pac-Man is two tiles up and
            *         two tiles left when Pac-Man is moving up."
            */
-          return pacmanMov.currentTile;
+          // get the tile 2 tiles in front of pacman
+          Vector2Int tilesInFrontOfPM = grid.GetTileInDirection(pacmanMov.currentTile,
+             pacmanMov.currentDir, 2, true);
+
+          // get wingman position (Blinky in normal configuration)
+          Vector2Int targetVector = tilesInFrontOfPM - wingman.currentTile;
+
+          // double targetVector
+          targetVector = targetVector * 2;
+          Debug.Log("------------------------- (wingman.currentTile + targetTile + targetVector: " + (wingman.currentTile + targetVector));
+          // add to the wingman's current tile
+          return wingman.currentTile + targetVector;
         case ChaseScheme.CircleAround:
           /*
            * Note:  Clyde's targeting scheme
@@ -365,7 +379,7 @@ using UnityEngine;
            *         away to target Pac-Man again.
            */
            float distanceToPM  = (currentTile - pacmanMov.currentTile).magnitude;
-           if(distanceToPM > 8) {             
+           if(distanceToPM > 8) {
              return pacmanMov.currentTile;
            }
            return scatterTile;
