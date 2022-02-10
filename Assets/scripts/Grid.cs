@@ -135,14 +135,21 @@ namespace PM {
     }
 
     public Vector2Int GetTileInDirection(Vector2Int currentTile, Dir dir,
-      int numTilesAway) {
+      int numTilesAway, bool addBugOffset = false) {
       // NOTE: currentTile is a copy, not a reference to the passed Coordinate
       Vector2Int tileDir = directions[(int)dir];
       tileDir = tileDir * numTilesAway;
-      Debug.Log("GetTileInDirection - currenTile: " + currentTile);
-      Debug.Log("                   - dir: " + dir);
-      Debug.Log("                   - numTilesAway: " + numTilesAway);
-      Debug.Log("                   - result: " + (currentTile + tileDir));
+      /*
+       * NOTE:  add overflow bug:
+       *        "overflow bug that mistakenly includes a left offset equal in
+       *         distance to the expected up offset"
+       *        source: The Pacman Dosier - gamasutra
+       */
+      if(addBugOffset && dir == Dir.Up) {
+        // recursive call to add error offset to the left
+        return GetTileInDirection(currentTile + tileDir, Dir.Left, numTilesAway);
+      }
+
       return currentTile + tileDir;
     }
 

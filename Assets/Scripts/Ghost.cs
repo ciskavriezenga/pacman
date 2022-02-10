@@ -316,7 +316,7 @@ using UnityEngine;
 
       /*
        * NOTE:  all information below about the schemes comes from the source:
-       *        https://www.gamasutra.com/view/feature/3938/the_pacman_dossier.php?print=1
+       *  https://www.gamasutra.com/view/feature/3938/the_pacman_dossier.php?print=1
        */
       switch(chaseScheme) {
         case ChaseScheme.TargetPacman:
@@ -338,8 +338,13 @@ using UnityEngine;
            *        error in the logic code that calculates Pinky's offset from
            *        Pac-Man"
            */
-          return grid.GetTileInDirection(pacmanMov.currentTile, pacmanMov.currentDir,
-            4);
+
+          // call GetTileInDirection with addBugOffset set to true to include
+          // the bug that results in an additional 4 tiles to the left if
+          // Pac-Man's direction == Dir.Up
+
+          return grid.GetTileInDirection(pacmanMov.currentTile,
+            pacmanMov.currentDir, 4, true);
 
         case ChaseScheme.Collaborate:
           /*

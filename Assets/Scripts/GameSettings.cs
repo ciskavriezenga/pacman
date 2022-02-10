@@ -19,7 +19,7 @@ namespace PM {
     //        technically incorrect, cause this can lead to a crash in the end
     //        when we do not wrap element index back to the beginning.
     public static readonly GhostModeInterval[] ghostModeIntervals = {
-      new GhostModeInterval(GhostMode.Scatter, 7),
+      new GhostModeInterval(GhostMode.Scatter, 2),
       new GhostModeInterval(GhostMode.Chase, 20),
       new GhostModeInterval(GhostMode.Scatter, 7),
       new GhostModeInterval(GhostMode.Chase, 20),
