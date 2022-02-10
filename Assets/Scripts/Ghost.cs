@@ -8,9 +8,10 @@ using UnityEngine;
   {
     public enum ChaseMode
     {
-      TargetPacman = 0, // regular Blinky behaviour
-      Frightened = 1,
-      Chase = 2
+      TargetPacman = 0,   // regular Blinky behaviour
+      AheadOfPacman = 1,  // regular Pinky behaviour
+      Collaborate = 2,    // regular Inky behaviour, based on blinky pos and pm
+      CircleAround = 3,   // regular Clyde behaviour
     }
     /*
      * in range x [0, 27], width = 28 and y [0, 30], height = 31
@@ -252,16 +253,24 @@ using UnityEngine;
       // reset moves
       ResetMoves(currentMove);
     }
-    void ResetMoves(Move currentMove) {
+
+
+    void ResetMoves(Move move) {
       // empty nextMoves
       nextMoves.Clear();
-      Vector2Int teleportPixel = currentMove.GetPixelMove();
-      currentPos = grid.Position(teleportPixel);
-      transform.position = grid.Position(teleportPixel);
-      currentTile = currentMove.tile;
-      currentMove = CreateSingleMove(currentTile, currentMove.direction);
+
+      // set currentposition to pixel position in the passed move struct
+      Vector2Int pixelMove = move.GetPixelMove();
+      currentPos = grid.Position(pixelMove);
+      transform.position = grid.Position(pixelMove);
+
+      // set current tile to the tile in the passed move struct
+      currentTile = move.tile;
+      // create the first move and store to currentMove
+      move = CreateSingleMove(currentTile, move.direction);
+
       // generate the upcoming moves for the ghost - based on last generate move
-      movesLastMove = currentMove;
+      movesLastMove = move;
       GenerateMoves();
     }
 
@@ -297,9 +306,32 @@ using UnityEngine;
       // therefore only two relavnt options: either scatter or Chase
       if(currentGhostMode == GhostMode.Chase) {
         // TODO - use chaseMode in switch
-        return pacmanMov.currentTile;
+        return GetGhostTypeTargetTile();   
       }
       return scatterTile;
+    }
+
+    Vector2Int GetGhostTypeTargetTile()
+    {
+      Vector2Int targetTile = new Vector2Int(0,0);
+
+      switch(chaseMode) {
+        case ChaseMode.TargetPacman:
+          return pacmanMov.currentTile;
+
+        case ChaseMode.AheadOfPacman:
+          return pacmanMov.currentTile;
+
+        case ChaseMode.Collaborate:
+          return pacmanMov.currentTile;
+
+        case ChaseMode.CircleAround:
+          return pacmanMov.currentTile;
+
+        default:
+          throw new System.Exception("Ghost.GetGhostTypeTargetTile - " +
+            "ChaseMode not found.");
+      }
     }
 
     public void SwitchMode(GhostMode newGhostMode) {

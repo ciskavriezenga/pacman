@@ -29,8 +29,7 @@ namespace PM {
     // Update is called once per frame
     void Update()
     {
-      countdownTime-= Time.deltaTime;
-      Debug.Log("countdownTime: " + countdownTime);
+      countdownTime-= Time.deltaTime;      
       if(countdownTime <= 0) {
         NextGhostMode();
       }
