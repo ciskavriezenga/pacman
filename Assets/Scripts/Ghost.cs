@@ -364,7 +364,11 @@ using UnityEngine;
            *        his scatter mode target instead ... until he is far enough
            *         away to target Pac-Man again.
            */
-          return pacmanMov.currentTile;
+           float distanceToPM  = (currentTile - pacmanMov.currentTile).magnitude;
+           if(distanceToPM > 8) {             
+             return pacmanMov.currentTile;
+           }
+           return scatterTile;
 
         default:
           throw new System.Exception("Ghost.GetGhostTypeTargetTile - " +
