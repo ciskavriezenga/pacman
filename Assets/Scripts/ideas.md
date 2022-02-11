@@ -5,3 +5,7 @@
 - Add more / less areas with the rules:
   - ghosts movement speed decreases
   - ghosts are not allowed to move in a certain direction
+
+
+data storage:
+- retrieve average distance ghosts to pacman

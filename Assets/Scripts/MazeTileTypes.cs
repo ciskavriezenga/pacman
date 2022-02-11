@@ -53,6 +53,8 @@ namespace PM {
       // TODO - add safety check if file exists
       // retrieve image data
       byte[] imgData = System.IO.File.ReadAllBytes(imgPath);
+      // NOTE: width and height are not necessary
+      // TODO - retrieve width and height from texture after loading image :)
       Texture2D gridTexture2D = new Texture2D(width, height);
       gridTexture2D.LoadImage(imgData);
 
