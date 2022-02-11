@@ -1,4 +1,4 @@
-// /#define SHOW_TARGET_TILE
+#define SHOW_TARGET_TILE
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,13 +27,13 @@ public class Ghost : MonoBehaviour
   // TODO remove
   //public Vector2Int scatterPos;
   public GameObject targetTileSR;
+  public GameObject scatterTileSR;
   public Grid.Dir startDirection = Grid.Dir.Right;
   // current position of pacman, also used as start position
   public Vector2 currentPos = new Vector2(13.875f, 7.625f);
   // currentSpeed of pacman
   private float currentSpeed;
   public float slowDownSpeedMultiplier;
-  public float normalSpeed;
   private bool isSlowedDown = false;
 
   // ghost mode, either scatter, frightened, chase
@@ -101,8 +101,9 @@ public class Ghost : MonoBehaviour
     // set initial values
     currentTile = settings.startTile;
     currentPos = grid.GetCenterPos(currentTile);
-    // TODO - remove
+
     currentSpeed = settings.normalSpeed;
+    slowDownSpeedMultiplier = 0.5f;
     startDirection = settings.startDirection;
   }
   // Start is called before the first frame update
@@ -214,7 +215,7 @@ public class Ghost : MonoBehaviour
     // TODO - add check if frightened - up tile movement is allowed!
     Vector2Int targetTile = GetTargetTile();
 #if SHOW_TARGET_TILE
-    targetTileSR.SetPosition(grid.GetCenterPos(targetTile));
+    targetTileSR.transform.position = grid.GetCenterPos(targetTile);
 #endif
     // get the tile of the new move
     // retrieve adjacentTiles
@@ -328,7 +329,7 @@ public class Ghost : MonoBehaviour
     if(isSlowedDown) {
       // reset speed
       isSlowedDown = false;
-      currentSpeed = normalSpeed;
+      currentSpeed = settings.normalSpeed;
     }
   }
 

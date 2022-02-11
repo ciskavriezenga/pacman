@@ -91,7 +91,8 @@ namespace PM {
         new Vector2Int(29, 0),   // scatter tile
         Grid.Dir.Left,           // start direction
         0.1f,                     // normal speed
-        Ghost.ChaseScheme.Collaborate, // chase scheme
+        Ghost.ChaseScheme.TargetPacman, // chase scheme
+        //Ghost.ChaseScheme.Collaborate, // chase scheme
         Color.cyan,
         "ghost_2"
       ),
@@ -101,17 +102,19 @@ namespace PM {
         new Vector2Int(4, 35),    // scatter tile
         Grid.Dir.Right,           // start direction
         0.1f,                      // normal speed
-        Ghost.ChaseScheme.AheadOfPacman,// chase scheme
+        Ghost.ChaseScheme.TargetPacman, // chase scheme
+        //Ghost.ChaseScheme.AheadOfPacman,// chase scheme
         Color.magenta,
         "ghost_3"
       ),
       // Clyde
       new GhostSettings (
         new Vector2Int(4, 3),    // start tile
-        new Vector2Int(29, 0),   // scatter tile
+        new Vector2Int(4, 0),   // scatter tile
         Grid.Dir.Left,           // start direction
         0.1f,                     // normal speed
-        Ghost.ChaseScheme.Collaborate, // chase scheme
+        Ghost.ChaseScheme.TargetPacman, // chase scheme
+        //Ghost.ChaseScheme.CircleAround, // chase scheme
         new Color(1f, 0.5f, 0f),
         "ghost_4"
       )

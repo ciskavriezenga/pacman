@@ -38,18 +38,16 @@ public static class GhostFactory {
     GameObject ghost = new GameObject();
     ghost.name = settings.name;
     // add rigidbody component
-    ghost.AddComponent<Rigidbody>();
+    Rigidbody ghostRigidBody = ghost.AddComponent<Rigidbody>() as Rigidbody;
+    ghostRigidBody.angularDrag = 0.0f;
+    ghostRigidBody.useGravity = false;
+
     // create ghost sprite renderer texture2D
     // TODO - use animation intead
     AddSpriteRenderer(ghost, "./assets/artwork/ghost.png", settings.color, 3);
     AddGhostScriptComponent(ghost, settings, gameManager);
-
-    // create targetTileVisualiser
-    GameObject targetTileSR = new GameObject();
-    targetTileSR.name = settings.name + "-target-tile-SR";
-    AddSpriteRenderer(targetTileSR, "./assets/artwork/targetTile.png",
-      settings.color, 4);
-    ghost.GetComponent<Ghost>().targetTileSR = targetTileSR;
+    AddScatterTileSR(ghost, settings, gameManager);
+    AddTargetTileSR(ghost, settings, gameManager);
 
     return ghost;
   }
@@ -80,6 +78,34 @@ public static class GhostFactory {
     // initialize ghost script component
     gameObject.GetComponent<Ghost>().Initialize(settings, gameManager,
       gameManager.grid,  gameManager.pacmanMov);
+  }
+
+  static void AddScatterTileSR(GameObject ghost, GhostSettings settings,
+    GameManager gameManager)
+  {
+    /*
+     * NOTE:  duplicate code - AddTargetTileSR
+     *        but okay for now, debugging purpose
+     */
+    // create targetTileVisualiser
+    GameObject scatterTileSR = new GameObject();
+    scatterTileSR.name = settings.name + "-scatter-tile-SR";
+    AddSpriteRenderer(scatterTileSR, "./assets/artwork/targetTile.png",
+      settings.color, 4);
+    scatterTileSR.transform.position = gameManager.grid.GetCenterPos(settings.scatterTile);
+    ghost.GetComponent<Ghost>().scatterTileSR = scatterTileSR;
+  }
+
+  static void AddTargetTileSR(GameObject ghost, GhostSettings settings,
+    GameManager gameManager)
+  {
+    // create targetTileVisualiser
+    GameObject targetTileSR = new GameObject();
+    targetTileSR.name = settings.name + "-target-tile-SR";
+    AddSpriteRenderer(targetTileSR, "./assets/artwork/targetTile.png",
+      settings.color, 4);
+    targetTileSR.transform.position = gameManager.grid.GetCenterPos(settings.scatterTile);
+    ghost.GetComponent<Ghost>().targetTileSR = targetTileSR;
   }
 
 } // end GhostFactory class
