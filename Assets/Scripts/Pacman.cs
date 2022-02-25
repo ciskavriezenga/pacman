@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PM {
   public class Pacman : MonoBehaviour
   {
-    // ---------- fields: position, tile, direction, target ----------
+    // -------------- model: position, tile, direction, target ---------------
     // current position of pacman, also used as start position
     [SerializeField] public Vector2 currentPos {get; private set;}
     // speed of pacman
@@ -19,17 +19,23 @@ namespace PM {
     // target position
     [SerializeField] private Vector2 moveToPos;
 
-    // ---------- UI ----------
+    // --------------- Graphics and UI ---------------------------------------
+    // animator reference
+    private Animator animator;
     private Maze.Dir lastHitKeyDir = Maze.Dir.None;
 
     public void Initialize(PacmanSettings settings) {
+      // get reference to animator
+      animator = GetComponent<Animator>();
+
       // set start values
       currentPos = settings.startPos;
-      currentDir = settings.startDirection;
+      SetDir(settings.startDirection);
       speed = settings.speed;
 
       // retrieve reference to the maze
       maze = GameManager.Instance.GetMaze();
+
 
       // initialize start values
       currentTile = maze.GetTileCoordinate(currentPos);
@@ -123,7 +129,7 @@ namespace PM {
         Vector2Int moveTile = maze.GetAdjacentTile(currentTile, dir);
         if(maze.TileIsPath(moveTile)) {
           // store the new direction in currentDir to new dir
-          currentDir = dir;
+          SetDir(dir);
           // update move to position
           moveToPos = maze.GetMoveToPos(moveTile, currentDir);
           return true;
@@ -142,6 +148,12 @@ namespace PM {
       currentPos = maze.GetMoveToPos(currentTile, currentDir);
       // transform to view grid and pixelate
       transform.position = maze.SnapToPixel(currentPos);
+    }
+
+    void SetDir(Maze.Dir dir)
+    {
+      currentDir = dir;
+      animator.SetInteger("direction", (int) dir);
     }
 
     public Vector2Int GetCurrentTile() {

@@ -1,4 +1,4 @@
-#define SHOW_TARGET_TILE
+#define SHOW_GHOST_TARGET_TILE
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +8,8 @@ namespace PM {
 
 public class Ghost : MonoBehaviour
 {
+  // --------------- directions and related -----------------------------------
+  // enum to for the different chase schemes
   public enum ChaseScheme
   {
     TargetPacman = 0,   // regular Blinky behaviour
@@ -15,45 +17,6 @@ public class Ghost : MonoBehaviour
     Collaborate = 2,    // regular Inky behaviour, based on blinky pos and pm
     CircleAround = 3,   // regular Clyde behaviour
   }
-  /*
-   * in range x [0, 27], width = 28 and y [0, 30], height = 31
-   * scatter tile Blinky: x = 25, y = 32
-   * scatter tile Pinky: ..
-   * scatter tile ...: ...
-   * scatter tile ...: ...
-   */
-
-  GhostSettings settings;
-  // TODO remove
-#if SHOW_TARGET_TILE
-  //public Vector2Int scatterPos;
-  public GameObject targetTileSR;
-  public GameObject scatterTileSR;
-#endif
-  public Maze.Dir startDirection = Maze.Dir.Right;
-  // current position of pacman, also used as start position
-  public Vector2 currentPos = new Vector2(13.875f, 7.625f);
-  // currentSpeed of pacman
-  private float currentSpeed;
-  public float slowDownSpeedMultiplier;
-  private bool isSlowedDown = false;
-
-  // ghost mode, either scatter, frightened, chase
-  public GameManager gameManager;
-  public GhostMode currentGhostMode;
-  // the ghost that will be used in case of the collaborate scheme
-  // which corresponds to the original Inky behavior based on Blinky's pos
-  public Ghost wingman;
-
-  // reference to the maze object
-  public Maze maze;
-
-
-  // temp reference to Pacman - to test Blinky pathfinding
-  public Pacman pacman;
-
-  // move to this position
-  private Vector2 moveToPos;
 
   // the oposite directions to a given direction
   private Maze.Dir[] oppositeDirs = {
@@ -63,7 +26,7 @@ public class Ghost : MonoBehaviour
     Maze.Dir.Right, // left --> right
   };
 
-  // 2d array with the allowd directions based on current direction
+  // 2d array with the allowed directions based on current direction
   // prefered order up, left, down, right
   private Maze.Dir[][] allowedDirs = {
     new Maze.Dir[] {Maze.Dir.Up, Maze.Dir.Left, Maze.Dir.Right}, // cur = R
@@ -73,15 +36,51 @@ public class Ghost : MonoBehaviour
   };
 
 
-  // current tile and move
-  public Vector2Int currentTile { get; private set; }
-  Move currentMove;
-  // next tiles to move to
-  Queue<Move> nextMoves = new Queue<Move>();
-  // allows to let the ghosts generate moves further ahead
-  //   which adds a delay to their movement
-  Move movesLastMove;
+  // --------------- references -----------------------------------------------
+  // reference to other objects - necessary to react
+  [SerializeField] private GameManager gameManager;
+  [SerializeField] private Maze maze;
+  [SerializeField] private Pacman pacman;
 
+  // the settings - used for initiate and reset
+  private GhostSettings settings;
+
+  // current position of ghost, also used as start position
+  [SerializeField] private Vector2 currentPos;
+
+  // fields related to speed of ghost
+  [SerializeField] private float currentSpeed;
+  private float slowDownSpeedMultiplier = 0.5f;
+  private bool isSlowedDown = false;
+
+  // ghost mode, either scatter, frightened, chase
+  private GhostMode currentGhostMode;
+  // the ghost that will be used in case of the collaborate scheme
+  // which corresponds to the original Inky behavior based on Blinky's pos
+  private Ghost wingman;
+
+  // move to this position
+  private Vector2 moveToPos;
+
+  // current tile
+  [SerializeField] private Vector2Int currentTile;
+  // moves - hold the moves one step ahead in time, current and last moves
+  private Queue<Move> nextMoves = new Queue<Move>();
+  private Move currentMove;
+  // TODO - this movelastmove  - better + easier + clearer flow possible?
+  private Move movesLastMove;
+  // TODO test idea: allows to let the ghosts generate moves further ahead
+  //   which adds a delay to their movement
+
+  #if SHOW_GHOST_TARGET_TILE
+    //public Vector2Int scatterPos;
+    private GameObject targetTileSR;
+    private GameObject scatterTileSR;
+  #endif
+
+  [SerializeField] private Animator animator;
+  [SerializeField] private RuntimeAnimatorController regularAnimatorController;
+  [SerializeField] private RuntimeAnimatorController scaredAnimatorController;
 
 
 
@@ -96,6 +95,13 @@ public class Ghost : MonoBehaviour
     this.maze = gameManager.GetMaze();
     this.pacman = gameManager.GetPacman();
 
+    regularAnimatorController = Resources.Load(settings.name)
+      as RuntimeAnimatorController;
+    scaredAnimatorController =  Resources.Load("ghost_scared")
+      as RuntimeAnimatorController;
+
+    animator = GetComponent<Animator>();
+    animator.runtimeAnimatorController = regularAnimatorController;
     // cache the current ghost mode
     currentGhostMode = gameManager.currentGhostMode;
 
@@ -104,23 +110,18 @@ public class Ghost : MonoBehaviour
     currentPos = maze.GetCenterPos(currentTile);
 
     currentSpeed = settings.normalSpeed;
-    slowDownSpeedMultiplier = 0.5f;
-    startDirection = settings.startDirection;
 
     // add first move - start up
-    // TODO - fix this setup step
-    currentMove = CreateSingleMove(currentTile, startDirection);
+    // TODO - fix this setup step - pos in ghost house
+    currentMove = CreateSingleMove(currentTile, settings.startDirection);
 
-  }
-  // Start is called before the first frame update
-  void Start()
-  {
     // generate the upcoming moves for the ghost - based on last generate move
     movesLastMove = currentMove;
     GenerateMoves();
 
     // get the target position based on first queued pixel move position
     moveToPos = maze.Position(currentMove.GetPixelMove());
+    Debug.Log("Ghost-initialize-currentMove: " + currentMove);
   }
 
 // =============================================================================
@@ -166,6 +167,7 @@ public class Ghost : MonoBehaviour
       // no new pixel move available - move is finalized
       // retrieve a new move from the moves queue
       currentMove = nextMoves.Dequeue();
+      SetDir(currentMove.direction);
     }
 
     // transform the next pixel coordinate to a position and
@@ -193,8 +195,10 @@ public class Ghost : MonoBehaviour
     // TODO - add check if frightened - up tile movement is allowed!
     Vector2Int targetTile = GetTargetTile();
     Debug.Log("target tile: " + targetTile);
-#if SHOW_TARGET_TILE
+    Debug.Log("Ghost-CreateSingleMove-maze: " + maze);
+#if SHOW_GHOST_TARGET_TILE
     targetTileSR.transform.position = maze.GetCenterPos(targetTile);
+    Debug.Log("Ghost-CreateSingleMove-targetTileSR.transform.position: " + targetTileSR.transform.position);
 #endif
     // get the tile of the new move
     // retrieve adjacentTiles
@@ -331,6 +335,8 @@ public class Ghost : MonoBehaviour
     return settings.scatterTile;
   }
 
+  public Vector2Int GetCurrentTile() { return currentTile;}
+
   Vector2Int GetGhostTypeTargetTile()
   {
     Vector2Int targetTile = new Vector2Int(0,0);
@@ -380,7 +386,7 @@ public class Ghost : MonoBehaviour
            pacman.currentDir, 2, true);
 
         // get wingman position (Blinky in normal configuration)
-        Vector2Int targetVector = tilesInFrontOfPM - wingman.currentTile;
+        Vector2Int targetVector = tilesInFrontOfPM - wingman.GetCurrentTile();
 
         // double targetVector
         targetVector = targetVector * 2;
@@ -408,6 +414,23 @@ public class Ghost : MonoBehaviour
     }
   }
 
+  public void SetWingman(Ghost wingman)
+  {
+    this.wingman = wingman;
+  }
+/*
+ * ---------- DEBUGGING - game object + sprite renderer  -------------------
+ *            for display of target and scatter tiles
+ */
+#if SHOW_GHOST_TARGET_TILE
+  public void SetDebugTargetTileSRs(GameObject targetTileSR, GameObject scatterTileSR)
+  {
+    Debug.Log("Ghost-SetDebugTargetTileSRs, tiles: " + targetTileSR
+      + " and "+  scatterTileSR);
+    this.targetTileSR = targetTileSR;
+    this.scatterTileSR = scatterTileSR;
+  }
+#endif
 // =============================================================================
 // =============== Other methods ===============================================
 // =============================================================================
@@ -439,6 +462,9 @@ public class Ghost : MonoBehaviour
     move.direction = oppositeDirs[(int) move.direction];
   }
 
+  void SetDir(Maze.Dir dir) {
+    animator.SetInteger("direction", (int) dir);
+  }
 
 }
 }

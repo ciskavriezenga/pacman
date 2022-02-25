@@ -1,4 +1,4 @@
-#define SHOW__GHOST_TARGET_TILE
+#define SHOW_GHOST_TARGET_TILE
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,11 +27,11 @@ public static class GameFactory {
 
       // set wingman for all ghosts except for first - use previous ghost
       if(i > 0) {
-        ghosts[i].wingman = ghosts[i - 1];
+        ghosts[i].SetWingman(ghosts[i - 1]);
       }
     }
     // set last ghost as wingman of first ghost
-    ghosts[0].wingman = ghosts[numGhosts - 1];
+    ghosts[0].SetWingman(ghosts[numGhosts - 1]);
     return ghosts;
   }
 
@@ -41,17 +41,18 @@ public static class GameFactory {
   {
     // create and instantiate the Ghost GameObject
     Ghost ghost = GameFactory.InstantiatePrefab("Prefabs/Ghost").GetComponent<Ghost>();
-    ghost.Initialize(settings, gameManager);
+
     // TODO - use correct annimation controller
 
-#if SHOW__GHOST_TARGET_TILE
+#if SHOW_GHOST_TARGET_TILE
     // add target tile for debugging purposes
-    ghost.GetComponent<Ghost>().targetTileSR =
-      CreateTargetTileSR(settings, gameManager, "-target-tile-SR");
-    // add scatter tile for debugging purposes
-    ghost.GetComponent<Ghost>().targetTileSR =
-      CreateTargetTileSR(settings, gameManager, "-scatter-tile-SR");
+  ghost.SetDebugTargetTileSRs(
+    CreateTargetTileSR(settings, gameManager, "-target-tile-SR"),
+    CreateTargetTileSR(settings, gameManager, "-scatter-tile-SR")
+  );
 #endif
+  ghost.Initialize(settings, gameManager);
+
     return ghost;
   }
 
@@ -61,7 +62,7 @@ public static class GameFactory {
     // create target tile sprite renderer
     GameObject targetTileSR = new GameObject();
     targetTileSR.name = settings.name + suffix;
-    AddSpriteRenderer(targetTileSR, "./assets/artwork/targetTile.png",
+    AddSpriteRenderer(targetTileSR, "./Assets/Images/targetTile.png",
       settings.color, 4);
     targetTileSR.transform.position = gameManager.GetMaze().GetCenterPos(settings.scatterTile);
     return targetTileSR;

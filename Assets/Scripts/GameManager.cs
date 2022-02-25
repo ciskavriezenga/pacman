@@ -15,14 +15,12 @@ public class GameManager : MonoBehaviour
 {
 
   public static GameManager Instance { get; private set; }
-
-  // TODO  - make private where possible
   // reference to the Maze, Pacman and Ghost objects
   [SerializeField] private Maze maze;
   [SerializeField] private Pacman pacman;
 
   [SerializeField] public GhostMode currentGhostMode { get; private set; }
-  public GameObject[] ghosts {get; private set;}
+  public Ghost[] ghosts {get; private set;}
 
   [SerializeField] public float countdownTime { get; private set; }
   // current ghost mode interval index
@@ -47,12 +45,8 @@ public class GameManager : MonoBehaviour
     pacman = GameFactory.InstantiatePrefab("Prefabs/Pacman").GetComponent<Pacman>();
     pacman.Initialize(GameSettings.GetPacmanSettings());
 
-
-
     // create the ghosts
-#if CREATE_GHOSTS
-    ghosts = GhostFactory.InstantiateGhosts(GameSettings.ghostSettingsGhosts, this);
-#endif
+    ghosts = GameFactory.InstantiateGhosts(GameSettings.GetGhostSettings(), this);
   }
 
 
@@ -104,12 +98,15 @@ public class GameManager : MonoBehaviour
     // update the ghostmode for each ghost
 #if CREATE_GHOSTS
     for(int i = 0; i < ghosts.Length; i++) {
-      ghosts[i].GetComponent<Ghost>().SwitchMode(currentGhostMode);
+      ghosts[i].SwitchMode(currentGhostMode);
     }
 #endif
   }
 
-  public Maze GetMaze() { return maze; }
+  public Maze GetMaze() {
+    Debug.Log("GameManager-GetMaze- maze: " + maze);
+    return maze;
+  }
   public Pacman GetPacman() { return pacman; }
 }
 }

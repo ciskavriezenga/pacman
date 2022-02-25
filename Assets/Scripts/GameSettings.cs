@@ -134,8 +134,7 @@ namespace PM {
         0.1f,                      // normal speed
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         Color.red,
-        // TODO generate name instead
-        "ghost_1"
+        "blinky"
       ),
       // Inky
       new GhostSettings (
@@ -146,9 +145,9 @@ namespace PM {
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         //Ghost.ChaseScheme.Collaborate, // chase scheme
         Color.cyan,
-        "ghost_2"
+        "inky"
       ),
-      // pinkya
+      // pinky
       new GhostSettings (
         new Vector2Int(4, 31),    // start tile
         new Vector2Int(4, 35),    // scatter tile
@@ -157,7 +156,7 @@ namespace PM {
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         //Ghost.ChaseScheme.AheadOfPacman,// chase scheme
         Color.magenta,
-        "ghost_3"
+        "pinky"
       ),
       // Clyde
       new GhostSettings (
@@ -168,7 +167,7 @@ namespace PM {
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         //Ghost.ChaseScheme.CircleAround, // chase scheme
         new Color(1f, 0.5f, 0f),
-        "ghost_4"
+        "clyde"
       )};
   }
 
