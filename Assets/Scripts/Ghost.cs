@@ -25,10 +25,12 @@ public class Ghost : MonoBehaviour
 
   GhostSettings settings;
   // TODO remove
+#if SHOW_TARGET_TILE
   //public Vector2Int scatterPos;
   public GameObject targetTileSR;
   public GameObject scatterTileSR;
-  public Grid.Dir startDirection = Grid.Dir.Right;
+#endif
+  public Maze.Dir startDirection = Maze.Dir.Right;
   // current position of pacman, also used as start position
   public Vector2 currentPos = new Vector2(13.875f, 7.625f);
   // currentSpeed of pacman
@@ -43,31 +45,31 @@ public class Ghost : MonoBehaviour
   // which corresponds to the original Inky behavior based on Blinky's pos
   public Ghost wingman;
 
-  // reference to the grid object
-  public Grid grid;
+  // reference to the maze object
+  public Maze maze;
 
 
   // temp reference to Pacman - to test Blinky pathfinding
-  public PacmanMovement pacmanMov;
+  public Pacman pacman;
 
   // move to this position
   private Vector2 moveToPos;
 
   // the oposite directions to a given direction
-  private Grid.Dir[] oppositeDirs = {
-    Grid.Dir.Down, // Up --> down
-    Grid.Dir.Left, // Right --> Left
-    Grid.Dir.Up, // Down --> up
-    Grid.Dir.Right, // left --> right
+  private Maze.Dir[] oppositeDirs = {
+    Maze.Dir.Down, // Up --> down
+    Maze.Dir.Left, // Right --> Left
+    Maze.Dir.Up, // Down --> up
+    Maze.Dir.Right, // left --> right
   };
 
   // 2d array with the allowd directions based on current direction
   // prefered order up, left, down, right
-  private Grid.Dir[][] allowedDirs = {
-    new Grid.Dir[] {Grid.Dir.Up, Grid.Dir.Left, Grid.Dir.Right}, // cur = R
-    new Grid.Dir[] {Grid.Dir.Up, Grid.Dir.Down, Grid.Dir.Right}, // cur = D
-    new Grid.Dir[] {Grid.Dir.Left, Grid.Dir.Down, Grid.Dir.Right}, // cur = L
-    new Grid.Dir[] {Grid.Dir.Up, Grid.Dir.Left, Grid.Dir.Down} // cur = U
+  private Maze.Dir[][] allowedDirs = {
+    new Maze.Dir[] {Maze.Dir.Up, Maze.Dir.Left, Maze.Dir.Right}, // cur = R
+    new Maze.Dir[] {Maze.Dir.Up, Maze.Dir.Down, Maze.Dir.Right}, // cur = D
+    new Maze.Dir[] {Maze.Dir.Left, Maze.Dir.Down, Maze.Dir.Right}, // cur = L
+    new Maze.Dir[] {Maze.Dir.Up, Maze.Dir.Left, Maze.Dir.Down} // cur = U
   };
 
 
@@ -87,62 +89,38 @@ public class Ghost : MonoBehaviour
 // =============== Initialize methods ==========================================
 // =============================================================================
 
-  public void Initialize (GhostSettings ghostSettings, GameManager gameManager, Grid grid, PacmanMovement pacmanMov) {
-    // store settings struct and GameManager and Grid references
-    settings = ghostSettings;
-    this.grid = grid;
+  public void Initialize (GhostSettings settings, GameManager gameManager) {
+    // store settings struct and gameManager, maze and pacman references
+    this.settings = settings;
     this.gameManager = gameManager;
-    // TODO - rename pacman movement class to Pacman
-    this.pacmanMov = pacmanMov;
+    this.maze = gameManager.GetMaze();
+    this.pacman = gameManager.GetPacman();
 
     // cache the current ghost mode
     currentGhostMode = gameManager.currentGhostMode;
 
     // set initial values
     currentTile = settings.startTile;
-    currentPos = grid.GetCenterPos(currentTile);
+    currentPos = maze.GetCenterPos(currentTile);
 
     currentSpeed = settings.normalSpeed;
     slowDownSpeedMultiplier = 0.5f;
     startDirection = settings.startDirection;
-  }
-  // Start is called before the first frame update
-  void Start()
-  {
-    // fetch direct reference to grid object
-    // TODO - remove
-    // grid = grid.GetComponent<Grid>();
-    // fetch direct reference to PacmanMovement object
-    // TODO - remove
-    // pacmanMov = pacmanMov.GetComponent<PacmanMovement>();
-    // fetch direct reference to GameManager object;
-    // TODO - remove
-    // gameManager = gameManager.GetComponent<GameManager>();
-
-    // cache the current ghost mode
-    // TODO - remove
-    // currentGhostMode = gameManager.currentGhostMode;
-
-
-    // transform scatter pos to scatter TileCoordscatterTile
-    // TODO - remove
-    // scatterTile = grid.GetTileCoordinate(scatterPos.position);
-    // set the current tile based on current position
-    // TODO - remove
-    // currentTile = grid.GetTileCoordinate(currentPos);
-    // set currentSpeed based on the normal speed value
-    // TODO - remove
-    // currentSpeed = normalSpeed;
 
     // add first move - start up
     // TODO - fix this setup step
     currentMove = CreateSingleMove(currentTile, startDirection);
+
+  }
+  // Start is called before the first frame update
+  void Start()
+  {
     // generate the upcoming moves for the ghost - based on last generate move
     movesLastMove = currentMove;
     GenerateMoves();
 
     // get the target position based on first queued pixel move position
-    moveToPos = grid.Position(currentMove.GetPixelMove());
+    moveToPos = maze.Position(currentMove.GetPixelMove());
   }
 
 // =============================================================================
@@ -156,11 +134,11 @@ public class Ghost : MonoBehaviour
     currentPos = Vector2.MoveTowards(currentPos, moveToPos, currentSpeed);
 
     // get the coordinate of the pixel corresponding to the current position
-    Vector2Int currentPixelCoord = grid.PixelCoordinate(currentPos);
+    Vector2Int currentPixelCoord = maze.PixelCoordinate(currentPos);
 
     // transform the pixel coordinate back to the floating point position
     // and update the position of the ghost
-    transform.position = grid.Position(currentPixelCoord);
+    transform.position = maze.Position(currentPixelCoord);
 
     // if the current pixel coordinate corresponds to the current pixel
     // coordinate in our current move --> we reached a pixel target
@@ -177,7 +155,7 @@ public class Ghost : MonoBehaviour
     if(currentMove.NextPixel()) {
       // there is a new pixel target coordination available
       // but did we reached a new tile?
-      currentTile = grid.GetTileCoordinate(transform.position);
+      currentTile = maze.GetTileCoordinate(transform.position);
       if(currentTile == currentMove.tile) {
         // generate a new move
         GenerateMoves();
@@ -192,7 +170,7 @@ public class Ghost : MonoBehaviour
 
     // transform the next pixel coordinate to a position and
     // store it as the new position to move to
-    moveToPos = grid.Position(currentMove.GetPixelMove());
+    moveToPos = maze.Position(currentMove.GetPixelMove());
   }
 
 // =============================================================================
@@ -210,26 +188,27 @@ public class Ghost : MonoBehaviour
     nextMoves.Enqueue(movesLastMove);
   }
 
-  Move CreateSingleMove(Vector2Int fromTile, Grid.Dir direction)
+  Move CreateSingleMove(Vector2Int fromTile, Maze.Dir direction)
   {
     // TODO - add check if frightened - up tile movement is allowed!
     Vector2Int targetTile = GetTargetTile();
+    Debug.Log("target tile: " + targetTile);
 #if SHOW_TARGET_TILE
-    targetTileSR.transform.position = grid.GetCenterPos(targetTile);
+    targetTileSR.transform.position = maze.GetCenterPos(targetTile);
 #endif
     // get the tile of the new move
     // retrieve adjacentTiles
-    Grid.Dir[] directions = allowedDirs[(int) direction];
+    Maze.Dir[] directions = allowedDirs[(int) direction];
     Vector2Int[] adjacentTiles = GetAdjacentTiles(fromTile, directions);
     // find the best move, most near to target tile
     int indexBestMove = -1;
     int smallestDistance = int.MaxValue;
     for(int i = 0; i < 3; i++) {
-      if(grid.TileIsPath(adjacentTiles[i])) {
+      if(maze.TileIsPath(adjacentTiles[i])) {
         // only allow movement up if allowed
-        if(directions[i] != Grid.Dir.Up || !grid.TileGhostNoUpward(fromTile)) {
+        if(directions[i] != Maze.Dir.Up || !maze.TileGhostNoUpward(fromTile)) {
           int distance =
-            grid.SquaredEuclideanDistance(targetTile, adjacentTiles[i]);
+            maze.SquaredEuclideanDistance(targetTile, adjacentTiles[i]);
           if(distance < smallestDistance) {
             smallestDistance = distance;
             indexBestMove = i;
@@ -241,24 +220,25 @@ public class Ghost : MonoBehaviour
     // create a new Move struct
     // NOTE: corresponding pixels are calculated in Move constructor
 
+
     // TODO - remove ref
-    return new Move(adjacentTiles[indexBestMove], directions[indexBestMove], ref grid);
+    return new Move(adjacentTiles[indexBestMove], directions[indexBestMove], ref maze);
 
   }
 
-  Vector2Int[] GetAdjacentTiles(Vector2Int departureTile, Grid.Dir[] directions)
+  Vector2Int[] GetAdjacentTiles(Vector2Int departureTile, Maze.Dir[] directions)
   {
     // copy relative adjacentTiles that correspond with the allowed directions
     Vector2Int[] adjacentTiles = {
-      grid.directions[(int) directions[0]],
-      grid.directions[(int) directions[1]],
-      grid.directions[(int) directions[2]]
+      maze.directions[(int) directions[0]],
+      maze.directions[(int) directions[1]],
+      maze.directions[(int) directions[2]]
     };
 
     // add the departure tile position to relative adjactentTiles
     for(int i = 0; i < 3; i++) {
       adjacentTiles[i] = adjacentTiles[i] + (departureTile);
-      grid.WrapTile(ref adjacentTiles[i]);
+      maze.WrapTile(ref adjacentTiles[i]);
     }
     // return resulting adjacent tiles
     return adjacentTiles;
@@ -270,7 +250,7 @@ public class Ghost : MonoBehaviour
 
   // processes the current tile type if necessary
   void ProcessCurrentTileType() {
-    MazeTileTypes.TileID tileID = grid.GetTileType(currentTile);
+    MazeTileTypes.TileID tileID = maze.GetTileType(currentTile);
 
     switch(tileID) {
       case MazeTileTypes.TileID.Teleport: {
@@ -302,8 +282,8 @@ public class Ghost : MonoBehaviour
 
     // set currentposition to pixel position in the passed move struct
     Vector2Int pixelMove = move.GetPixelMove();
-    currentPos = grid.Position(pixelMove);
-    transform.position = grid.Position(pixelMove);
+    currentPos = maze.Position(pixelMove);
+    transform.position = maze.Position(pixelMove);
 
     // set current tile to the tile in the passed move struct
     currentTile = move.tile;
@@ -367,7 +347,7 @@ public class Ghost : MonoBehaviour
          *        current tile as his target."
          */
 
-        return pacmanMov.currentTile;
+        return pacman.GetCurrentTile();
 
       case ChaseScheme.AheadOfPacman:
         /*
@@ -384,8 +364,8 @@ public class Ghost : MonoBehaviour
         // the bug that results in an additional 4 tiles to the left if
         // Pac-Man's direction == Dir.Up
 
-        return grid.GetTileInDirection(pacmanMov.currentTile,
-          pacmanMov.currentDir, 4, true);
+        return maze.GetTileInDirection(pacman.GetCurrentTile(),
+          pacman.currentDir, 4, true);
 
       case ChaseScheme.Collaborate:
         /*
@@ -396,8 +376,8 @@ public class Ghost : MonoBehaviour
          *         two tiles left when Pac-Man is moving up."
          */
         // get the tile 2 tiles in front of pacman
-        Vector2Int tilesInFrontOfPM = grid.GetTileInDirection(pacmanMov.currentTile,
-           pacmanMov.currentDir, 2, true);
+        Vector2Int tilesInFrontOfPM = maze.GetTileInDirection(pacman.GetCurrentTile(),
+           pacman.currentDir, 2, true);
 
         // get wingman position (Blinky in normal configuration)
         Vector2Int targetVector = tilesInFrontOfPM - wingman.currentTile;
@@ -416,9 +396,9 @@ public class Ghost : MonoBehaviour
          *        his scatter mode target instead ... until he is far enough
          *         away to target Pac-Man again.
          */
-         float distanceToPM  = (currentTile - pacmanMov.currentTile).magnitude;
+         float distanceToPM  = (currentTile - pacman.GetCurrentTile()).magnitude;
          if(distanceToPM > 8) {
-           return pacmanMov.currentTile;
+           return pacman.GetCurrentTile();
          }
          return settings.scatterTile;
 

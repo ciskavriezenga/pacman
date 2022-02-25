@@ -6,6 +6,42 @@ namespace PM {
 
 
 // =============================================================================
+// =============== MazeSettings ================================================
+// =============================================================================
+  public struct MazeSettings {
+    public int width;
+    public int height;
+    public string imgPathMultiBg;
+    public string imgPathGhostHouse;
+
+    public MazeSettings(string imgPathMultiBg, string imgPathGhostHouse)
+    {
+      width = 32;
+      height = 35;
+      this.imgPathMultiBg = imgPathMultiBg;
+      this.imgPathGhostHouse = imgPathGhostHouse;
+    }
+  }
+
+// =============================================================================
+// =============== PacmanSettings ==============================================
+// =============================================================================
+  public struct PacmanSettings {
+    public Vector2 startPos;
+    public float speed;
+    public Maze.Dir startDirection;
+    public string settingsName;
+    public PacmanSettings(Vector2 startPos, float speed,
+      Maze.Dir startDirection, string settingsName)
+    {
+      this.startPos = startPos;
+      this.speed = speed;
+      this.startDirection = startDirection;
+      this.settingsName = settingsName;
+    }
+  }
+
+// =============================================================================
 // =============== GhostModeInterval ===========================================
 // =============================================================================
   public struct GhostModeInterval {
@@ -25,7 +61,7 @@ namespace PM {
   public struct GhostSettings {
     public Vector2Int startTile;
     public Vector2Int scatterTile;
-    public Grid.Dir startDirection;
+    public Maze.Dir startDirection;
     public float normalSpeed;
     public Ghost.ChaseScheme chaseScheme;
     // TODO - replace with animation
@@ -33,7 +69,7 @@ namespace PM {
     public string name;
 
     public GhostSettings(Vector2Int startTile, Vector2Int scatterTile,
-      Grid.Dir startDirection, float normalSpeed, Ghost.ChaseScheme chaseScheme,
+      Maze.Dir startDirection, float normalSpeed, Ghost.ChaseScheme chaseScheme,
       Color color, string name)
     {
       this.startTile = startTile;
@@ -55,9 +91,23 @@ namespace PM {
   // TODO - create an array with arrays for scatter / chase mode per (multiple)
   //        levels according to pdf pacman dosier
   public static class GameSettings {
-    // NOTE:  for now using max value for last chase mode interval
-    //        technically incorrect, cause this can lead to a crash in the end
-    //        when we do not wrap element index back to the beginning.
+    public static PacmanSettings GetPacmanSettings()
+    {
+      return new PacmanSettings(new Vector2(16f, 9.5f), 0.1f, Maze.Dir.Left,
+      "default-pacman-settings");
+    }
+
+    public static MazeSettings GetMazeSettings() {
+      return new MazeSettings(
+        "Assets/Images/Maze-maps/Default/pacman-bg-multi.png",
+        "Assets/Images/Maze-maps/Default/pacman-bg-ghost-house.png");
+    }
+
+    /*
+     * NOTE:  for now using max value for last chase mode interval
+     *        technically incorrect, cause this can lead to a crash in the end
+     *        when we do not wrap element index back to the beginning.
+     */
     public static readonly GhostModeInterval[] ghostModeIntervals = {
       new GhostModeInterval(GhostMode.Scatter, 2),
       new GhostModeInterval(GhostMode.Chase, 20),
@@ -73,12 +123,14 @@ namespace PM {
      * NOTE: for now - creating the ghost's settings here hardocded
      * future wannahave: use json file for different sets of configurations
      */
-    public static readonly GhostSettings[] ghostSettingsGhosts = {
+    public static GhostSettings[] GetGhostSettings() {
+
+      return new GhostSettings[4] {
       // blinky
       new GhostSettings (
         new Vector2Int(27, 31),   // start tile
         new Vector2Int(27, 35),   // scatter tile
-        Grid.Dir.Left,            // start direction
+        Maze.Dir.Left,            // start direction
         0.1f,                      // normal speed
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         Color.red,
@@ -88,19 +140,19 @@ namespace PM {
       // Inky
       new GhostSettings (
         new Vector2Int(27, 3),   // start tile
-        new Vector2Int(29, 0),   // scatter tile
-        Grid.Dir.Left,           // start direction
+        new Vector2Int(27, 0),   // scatter tile
+        Maze.Dir.Left,           // start direction
         0.1f,                     // normal speed
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         //Ghost.ChaseScheme.Collaborate, // chase scheme
         Color.cyan,
         "ghost_2"
       ),
-      // pinky
+      // pinkya
       new GhostSettings (
         new Vector2Int(4, 31),    // start tile
         new Vector2Int(4, 35),    // scatter tile
-        Grid.Dir.Right,           // start direction
+        Maze.Dir.Right,           // start direction
         0.1f,                      // normal speed
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         //Ghost.ChaseScheme.AheadOfPacman,// chase scheme
@@ -111,14 +163,14 @@ namespace PM {
       new GhostSettings (
         new Vector2Int(4, 3),    // start tile
         new Vector2Int(4, 0),   // scatter tile
-        Grid.Dir.Left,           // start direction
+        Maze.Dir.Left,           // start direction
         0.1f,                     // normal speed
         Ghost.ChaseScheme.TargetPacman, // chase scheme
         //Ghost.ChaseScheme.CircleAround, // chase scheme
         new Color(1f, 0.5f, 0f),
         "ghost_4"
-      )
-    };
+      )};
+  }
 
   }
 }

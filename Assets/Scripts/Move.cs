@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PM {
   public struct Move {
     public Vector2Int tile { get; private set; }
-    public Grid.Dir direction;
+    public Maze.Dir direction;
     private Vector2Int[] pixels;
     private int pixelIndex;
 
@@ -17,16 +17,16 @@ namespace PM {
     };
 
     // TODO - remove ref
-    public Move(Vector2Int tile, Grid.Dir direction, ref Grid grid) {
+    public Move(Vector2Int tile, Maze.Dir direction, ref Maze maze) {
       this.tile = tile;
       this.direction = direction;
       pixelIndex = 0;
       // fetch the pixel locations for this move
-      Vector2 edgePosition = grid.GetMoveToPos(tile, direction);
-      Vector2 centerPosition = grid.GetCenterPos(tile);
+      Vector2 edgePosition = maze.GetMoveToPos(tile, direction);
+      Vector2 centerPosition = maze.GetCenterPos(tile);
       pixels = new Vector2Int[]{
-        grid.PixelCoordinate(edgePosition),
-        grid.PixelCoordinate(centerPosition)
+        maze.PixelCoordinate(edgePosition),
+        maze.PixelCoordinate(centerPosition)
       };
     }
 

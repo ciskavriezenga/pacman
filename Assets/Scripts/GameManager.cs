@@ -14,31 +14,53 @@ public enum GhostMode
 public class GameManager : MonoBehaviour
 {
 
-  // reference to the grid object
-  public Grid grid;
-  // TODO - instantiate pacman instead of ref from scene unity UI
-  public PacmanMovement pacmanMov;
+  public static GameManager Instance { get; private set; }
 
-  public GhostMode currentGhostMode { get; private set; }
+  // TODO  - make private where possible
+  // reference to the Maze, Pacman and Ghost objects
+  [SerializeField] private Maze maze;
+  [SerializeField] private Pacman pacman;
+
+  [SerializeField] public GhostMode currentGhostMode { get; private set; }
   public GameObject[] ghosts {get; private set;}
 
-  public float countdownTime { get; private set; }
+  [SerializeField] public float countdownTime { get; private set; }
   // current ghost mode interval index
   private int gModeIntervalIndex;
 
   public void Awake() {
-    // fetch direct reference to grid object
-    grid = grid.GetComponent<Grid>();
-    // fetch direct reference to PacmanMovement object
-    pacmanMov = pacmanMov.GetComponent<PacmanMovement>();
+    // Singleton pattern
+    if (Instance != null && Instance != this)
+    {
+        Destroy(this);
+    }
+    else
+    {
+        Instance = this;
+    }
+
+    // create and instantiate the Maze GameObject
+    maze = GameFactory.InstantiatePrefab("Prefabs/Maze").GetComponent<Maze>();
+    maze.Initialize(GameSettings.GetMazeSettings());
+
+    // create and instantiate the Pacman GameObject
+    pacman = GameFactory.InstantiatePrefab("Prefabs/Pacman").GetComponent<Pacman>();
+    pacman.Initialize(GameSettings.GetPacmanSettings());
+
+
 
     // create the ghosts
-    ghosts = GhostFactory.CreateGhosts(GameSettings.ghostSettingsGhosts, this);
-
+#if CREATE_GHOSTS
+    ghosts = GhostFactory.InstantiateGhosts(GameSettings.ghostSettingsGhosts, this);
+#endif
   }
+
+
 
   // initialize values on Awake
   void Start() {
+    Debug.Log("GameManager - START");
+    //pacmanMov.Initialize(GameSettings.pacmanSettings, maze);
     ResetGhostMode();
   }
 
@@ -80,11 +102,14 @@ public class GameManager : MonoBehaviour
     // cache the current ghost mode
     currentGhostMode = modeInterval.mode;
     // update the ghostmode for each ghost
+#if CREATE_GHOSTS
     for(int i = 0; i < ghosts.Length; i++) {
       ghosts[i].GetComponent<Ghost>().SwitchMode(currentGhostMode);
     }
+#endif
   }
 
-
+  public Maze GetMaze() { return maze; }
+  public Pacman GetPacman() { return pacman; }
 }
 }
