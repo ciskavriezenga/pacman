@@ -14,8 +14,10 @@ namespace PM {
     public RuleTile ruleTileGhostDoor;
 
     // private settings
-    private int width;
-    private int height;
+    public int width {get; private set;}
+    public int height {get; private set;}
+    // TODO - fix this to not hardcoded
+    public int borderSize {get; private set;} = 2;
     private string imgPathMultiBg;
     private string imgPathGhostHouse;
 
@@ -216,6 +218,13 @@ namespace PM {
     {
       // WrapTile(ref tile);
       return mazeTileTypes.TileIsPath(tile);
+    }
+
+    public bool TileIsGhostHouse(Vector2Int tile)
+    {
+      // WrapTile(ref tile);
+      return ghostHouseTileTypes.GetTileID(tile)
+        == MazeTileTypes.TileID.GhostHouse;
     }
 
     public bool TileGhostNoUpward(Vector2Int tile)

@@ -11,7 +11,7 @@ namespace PM {
     // speed of pacman
     private float speed;
     // reference to the grid object
-    private Maze maze;
+    [SerializeField] private Maze maze;
     // tile in the pacman maze grid
     [SerializeField] private Vector2Int currentTile;
     // current movement directions
@@ -24,17 +24,18 @@ namespace PM {
     private Animator animator;
     private Maze.Dir lastHitKeyDir = Maze.Dir.None;
 
-    public void Initialize(PacmanSettings settings) {
+    public void Initialize(PacmanSettings settings, Maze maze) {
       // get reference to animator
       animator = GetComponent<Animator>();
+      // retrieve reference to the maze
+      this.maze = maze;
+      Debug.Log("PACMAN- INITIALIZE - maze: " + maze);
 
       // set start values
       currentPos = settings.startPos;
       SetDir(settings.startDirection);
       speed = settings.speed;
 
-      // retrieve reference to the maze
-      maze = GameManager.Instance.GetMaze();
 
 
       // initialize start values
@@ -91,6 +92,7 @@ namespace PM {
     void FixedUpdate()
     {
       currentPos = Vector2.MoveTowards(currentPos, moveToPos, speed);
+
       // transform to view grid and pixelate
       transform.position = maze.SnapToPixel(currentPos);
 

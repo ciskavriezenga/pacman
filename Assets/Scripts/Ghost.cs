@@ -120,8 +120,7 @@ public class Ghost : MonoBehaviour
     GenerateMoves();
 
     // get the target position based on first queued pixel move position
-    moveToPos = maze.Position(currentMove.GetPixelMove());
-    Debug.Log("Ghost-initialize-currentMove: " + currentMove);
+    moveToPos = maze.Position(currentMove.GetPixelMove());    
   }
 
 // =============================================================================
@@ -194,8 +193,6 @@ public class Ghost : MonoBehaviour
   {
     // TODO - add check if frightened - up tile movement is allowed!
     Vector2Int targetTile = GetTargetTile();
-    Debug.Log("target tile: " + targetTile);
-    Debug.Log("Ghost-CreateSingleMove-maze: " + maze);
 #if SHOW_GHOST_TARGET_TILE
     targetTileSR.transform.position = maze.GetCenterPos(targetTile);
     Debug.Log("Ghost-CreateSingleMove-targetTileSR.transform.position: " + targetTileSR.transform.position);
@@ -390,7 +387,9 @@ public class Ghost : MonoBehaviour
 
         // double targetVector
         targetVector = targetVector * 2;
+#if DEBUG_GHOST
         Debug.Log("------------------------- (wingman.currentTile + targetTile + targetVector: " + (wingman.currentTile + targetVector));
+#endif
         // add to the wingman's current tile
         return wingman.currentTile + targetVector;
       case ChaseScheme.CircleAround:
@@ -425,8 +424,6 @@ public class Ghost : MonoBehaviour
 #if SHOW_GHOST_TARGET_TILE
   public void SetDebugTargetTileSRs(GameObject targetTileSR, GameObject scatterTileSR)
   {
-    Debug.Log("Ghost-SetDebugTargetTileSRs, tiles: " + targetTileSR
-      + " and "+  scatterTileSR);
     this.targetTileSR = targetTileSR;
     this.scatterTileSR = scatterTileSR;
   }
@@ -435,8 +432,9 @@ public class Ghost : MonoBehaviour
 // =============== Other methods ===============================================
 // =============================================================================
   public void SwitchMode(GhostMode newGhostMode) {
+#if DEBUG_GHOST
     Debug.Log("*** Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
-
+#endif
     /*
      * Ghosts are forced to reverse direction by the system anytime the
      * mode changes from:

@@ -77,13 +77,42 @@ public static class GameFactory {
     spriteRenderer.sortingOrder = sortingOrder;
 
     // load image data
-    byte[] imgData = System.IO.File.ReadAllBytes(imgPath);
-    Texture2D texture = new Texture2D(1, 1);
-    texture.LoadImage(imgData);
+    Texture2D texture = InstantiateTexture(imgPath);
     spriteRenderer.color = color;
     Sprite sprite = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width,
       texture.height), new Vector2(0.5f, 0.5f), 100.0f);
     spriteRenderer.sprite = sprite;
+  }
+
+  public static Texture2D InstantiateTexture(string imgPath)
+  {
+    byte[] imgData = System.IO.File.ReadAllBytes(imgPath);
+    Texture2D texture = new Texture2D(1, 1);
+    texture.LoadImage(imgData);
+    return texture;
+  }
+
+  public static Pellet[] InstantiatePellets(string resourcePath, Maze maze,
+    Score score)
+  {
+    List<Pellet> pellets = new List<Pellet>();
+    // iterate over all tiles (i, j)
+    for(int j = maze.borderSize; j < maze.height - maze.borderSize; j++) {
+      for(int i = maze.borderSize; i < maze.width - maze.borderSize; i++) {
+        Vector2Int tile = new Vector2Int(i, j);
+        if(maze.TileIsPath(tile) && !maze.TileIsGhostHouse(tile)) {
+          GameObject pelletGO = InstantiatePrefab(resourcePath);
+          pelletGO.transform.position = maze.GetCenterPos(tile);
+          Pellet pellet = pelletGO.GetComponent<Pellet>();
+          // TODO - super pellet
+          // TODO - not in ghosthouse
+          pellet.Initialize(false, score);
+          pellets.Add(pellet);
+        }
+
+      }
+    }
+    return pellets.ToArray();;
   }
 }
 }

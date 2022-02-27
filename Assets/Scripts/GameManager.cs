@@ -17,10 +17,13 @@ public class GameManager : MonoBehaviour
   public static GameManager Instance { get; private set; }
   // reference to the Maze, Pacman and Ghost objects
   [SerializeField] private Maze maze;
+  [SerializeField] private Score score;
+  [SerializeField] private Pellet[] pellets;
   [SerializeField] private Pacman pacman;
+  // TODO - make private?
+  public Ghost[] ghosts {get; private set;}
 
   [SerializeField] public GhostMode currentGhostMode { get; private set; }
-  public Ghost[] ghosts {get; private set;}
 
   [SerializeField] public float countdownTime { get; private set; }
   // current ghost mode interval index
@@ -43,10 +46,16 @@ public class GameManager : MonoBehaviour
 
     // create and instantiate the Pacman GameObject
     pacman = GameFactory.InstantiatePrefab("Prefabs/Pacman").GetComponent<Pacman>();
-    pacman.Initialize(GameSettings.GetPacmanSettings());
+    pacman.Initialize(GameSettings.GetPacmanSettings(), maze);
 
     // create the ghosts
     ghosts = GameFactory.InstantiateGhosts(GameSettings.GetGhostSettings(), this);
+
+    // create and instantiate the highscore GameObject
+    score = GameFactory.InstantiatePrefab("Prefabs/Score").GetComponent<Score>();
+
+    // create and instantiate pellets
+    pellets = GameFactory.InstantiatePellets("Prefabs/Pellet", maze, score);
   }
 
 
@@ -103,6 +112,9 @@ public class GameManager : MonoBehaviour
 #endif
   }
 
+// =============================================================================
+// =============== getters  ====================================================
+// =============================================================================
   public Maze GetMaze() {
     Debug.Log("GameManager-GetMaze- maze: " + maze);
     return maze;
