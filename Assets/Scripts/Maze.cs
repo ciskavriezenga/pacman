@@ -214,6 +214,18 @@ namespace PM {
       }
     }
 
+    /*
+     * TODO
+     * use string as map instead of maze tile tileTypes
+     *
+     */
+
+
+    public bool TileContainsPellet(Vector2Int tile){
+      return TileIsPath(tile) && !TileIsGhostHouse(tile)
+        && !TileIsTunnel(tile);
+    }
+
     public bool TileIsPath(Vector2Int tile)
     {
       // WrapTile(ref tile);
@@ -226,6 +238,7 @@ namespace PM {
       return ghostHouseTileTypes.GetTileID(tile)
         == MazeTileTypes.TileID.GhostHouse;
     }
+
 
     public bool TileGhostNoUpward(Vector2Int tile)
     {

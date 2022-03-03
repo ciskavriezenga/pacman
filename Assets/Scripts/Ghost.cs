@@ -1,4 +1,4 @@
-#define SHOW_GHOST_TARGET_TILE
+//#define SHOW_GHOST_TARGET_TILE
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,7 +10,7 @@ public class Ghost : MonoBehaviour
 {
   // --------------- directions and related -----------------------------------
   // enum to for the different chase schemes
-  public enum ChaseScheme
+  public enum CHASEScheme
   {
     TargetPacman = 0,   // regular Blinky behaviour
     AheadOfPacman = 1,  // regular Pinky behaviour
@@ -49,7 +49,8 @@ public class Ghost : MonoBehaviour
   [SerializeField] private Vector2 currentPos;
 
   // fields related to speed of ghost
-  [SerializeField] private float currentSpeed;
+  //[SerializeField] private float currentSpeed;
+  public float currentSpeed;
   private float slowDownSpeedMultiplier = 0.5f;
   private bool isSlowedDown = false;
 
@@ -67,6 +68,7 @@ public class Ghost : MonoBehaviour
   // moves - hold the moves one step ahead in time, current and last moves
   private Queue<Move> nextMoves = new Queue<Move>();
   private Move currentMove;
+  private Maze.Dir currentDir;
   // TODO - this movelastmove  - better + easier + clearer flow possible?
   private Move movesLastMove;
   // TODO test idea: allows to let the ghosts generate moves further ahead
@@ -120,7 +122,7 @@ public class Ghost : MonoBehaviour
     GenerateMoves();
 
     // get the target position based on first queued pixel move position
-    moveToPos = maze.Position(currentMove.GetPixelMove());    
+    moveToPos = maze.Position(currentMove.GetPixelMove());
   }
 
 // =============================================================================
@@ -195,7 +197,6 @@ public class Ghost : MonoBehaviour
     Vector2Int targetTile = GetTargetTile();
 #if SHOW_GHOST_TARGET_TILE
     targetTileSR.transform.position = maze.GetCenterPos(targetTile);
-    Debug.Log("Ghost-CreateSingleMove-targetTileSR.transform.position: " + targetTileSR.transform.position);
 #endif
     // get the tile of the new move
     // retrieve adjacentTiles
@@ -325,8 +326,8 @@ public class Ghost : MonoBehaviour
     // return the tile that corresponds to the current mode
     // NOTE: Ghosts use a pseudo-random number generator (PRNG) to pick a way
     // to turn at each intersection when frightened. - no target tile needed
-    // therefore only two relavnt options: either scatter or Chase
-    if(currentGhostMode == GhostMode.Chase) {
+    // therefore only two relavnt options: either scatter or CHASE
+    if(currentGhostMode == GhostMode.CHASE) {
       return GetGhostTypeTargetTile();
     }
     return settings.scatterTile;
@@ -343,7 +344,7 @@ public class Ghost : MonoBehaviour
      *  https://www.gamasutra.com/view/feature/3938/the_pacman_dossier.php?print=1
      */
     switch(settings.chaseScheme) {
-      case ChaseScheme.TargetPacman:
+      case CHASEScheme.TargetPacman:
         /*
          * NOTE:  Blinky's targeting scheme
          *        "Blinky's is the most simple and direct, using Pac-Man's
@@ -352,7 +353,7 @@ public class Ghost : MonoBehaviour
 
         return pacman.GetCurrentTile();
 
-      case ChaseScheme.AheadOfPacman:
+      case CHASEScheme.AheadOfPacman:
         /*
          * NOTE:  Pinky's targeting scheme
          *        "Pinky selects an offset four tiles away from Pac-Man in
@@ -370,7 +371,7 @@ public class Ghost : MonoBehaviour
         return maze.GetTileInDirection(pacman.GetCurrentTile(),
           pacman.currentDir, 4, true);
 
-      case ChaseScheme.Collaborate:
+      case CHASEScheme.Collaborate:
         /*
          * NOTE:  Inky's targeting scheme
          *        1. Draw line from Bliny to 2 tiles in front of Pac-man
@@ -392,7 +393,7 @@ public class Ghost : MonoBehaviour
 #endif
         // add to the wingman's current tile
         return wingman.currentTile + targetVector;
-      case ChaseScheme.CircleAround:
+      case CHASEScheme.CircleAround:
         /*
          * Note:  Clyde's targeting scheme
          *        "When more than eight tiles away, he uses Pac-Man's tile as
@@ -409,7 +410,7 @@ public class Ghost : MonoBehaviour
 
       default:
         throw new System.Exception("Ghost.GetGhostTypeTargetTile - " +
-          "ChaseScheme not found.");
+          "CHASEScheme not found.");
     }
   }
 
@@ -432,6 +433,13 @@ public class Ghost : MonoBehaviour
 // =============== Other methods ===============================================
 // =============================================================================
   public void SwitchMode(GhostMode newGhostMode) {
+    // do nothing if new mode equals current
+    // NOTE: this should never happen - extra safe check though to be sure
+    if(newGhostMode == currentGhostMode) {
+      Debug.Log("********* ERROR *********\n Ghost.SwitchMode - new ghost mode is same as current!");
+      return;
+    }
+
 #if DEBUG_GHOST
     Debug.Log("*** Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
 #endif
@@ -447,9 +455,21 @@ public class Ghost : MonoBehaviour
      *  • frightened - scatter
      * Reference: The Pacman Dosier - Gamasutra
      */
-    if(currentGhostMode != GhostMode.Frightened) {
+    if(currentGhostMode != GhostMode.FRIGHTENED) {
+      if(newGhostMode == GhostMode.FRIGHTENED) {
+        // switch to scared animation controller
+        animator.runtimeAnimatorController = scaredAnimatorController;
+      }
       SwitchDirection(ref currentMove);
+    } else {
+      // current mode is frightened, new mode not --> animation back to normal
+      animator.runtimeAnimatorController = regularAnimatorController;
     }
+
+
+
+
+
     // cache the new ghost mode
     currentGhostMode = newGhostMode;
 
@@ -461,7 +481,11 @@ public class Ghost : MonoBehaviour
   }
 
   void SetDir(Maze.Dir dir) {
-    animator.SetInteger("direction", (int) dir);
+    if(dir != currentDir) {
+      animator.SetInteger("direction", (int) dir);
+      currentDir = dir;
+    }
+
   }
 
 }

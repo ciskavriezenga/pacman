@@ -16,11 +16,10 @@ public class Score : MonoBehaviour
     textScore.text = 0.ToString();
   }
 
-  public void increment()
+  public void Add(int points)
   {
-      highscore++;
-      textScore.text = highscore.ToString();
-      Debug.Log("HIGHSCORE: " + highscore.ToString());
+      highscore += points;
+      textScore.text = highscore.ToString();      
   }
 
 }

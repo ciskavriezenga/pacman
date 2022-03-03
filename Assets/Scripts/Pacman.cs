@@ -9,9 +9,12 @@ namespace PM {
     // current position of pacman, also used as start position
     [SerializeField] public Vector2 currentPos {get; private set;}
     // speed of pacman
-    private float speed;
+    public float speed;
+    // reference to the grid object
+    [SerializeField] private GameManager gameManager;
     // reference to the grid object
     [SerializeField] private Maze maze;
+    private PacmanSettings settings;
     // tile in the pacman maze grid
     [SerializeField] private Vector2Int currentTile;
     // current movement directions
@@ -24,17 +27,20 @@ namespace PM {
     private Animator animator;
     private Maze.Dir lastHitKeyDir = Maze.Dir.None;
 
-    public void Initialize(PacmanSettings settings, Maze maze) {
+    public void Initialize(PacmanSettings settings, GameManager gameManager) {
+      this.settings = settings;
+      // retrieve reference to the maze
+      this.gameManager = gameManager;
+      this.maze = gameManager.GetMaze();
+      Debug.Log("PACMAN- INITIALIZE - maze: " + maze);
+
       // get reference to animator
       animator = GetComponent<Animator>();
-      // retrieve reference to the maze
-      this.maze = maze;
-      Debug.Log("PACMAN- INITIALIZE - maze: " + maze);
 
       // set start values
       currentPos = settings.startPos;
       SetDir(settings.startDirection);
-      speed = settings.speed;
+      speed = settings.normSpeed;
 
 
 
@@ -101,6 +107,22 @@ namespace PM {
 
       if(!currentTile.Equals(newTile)) {
         currentTile = newTile;
+
+        // update current speed
+        if(gameManager.PacmanEatsPellet(currentTile)) {
+          if(gameManager.GameModeIsFrightened()) {
+            speed = settings.frightDotSpeed;
+          } else {
+            speed = settings.normDotSpeed;
+          }
+        } else {
+          if(gameManager.GameModeIsFrightened()) {
+            speed = settings.frightSpeed;
+          } else {
+            speed = settings.normSpeed;
+          }
+        }
+
         // if this new tile is a teleport tile --> teleport :D
         if(maze.TileIsTeleport(currentTile)) {
           Teleport();
@@ -154,8 +176,11 @@ namespace PM {
 
     void SetDir(Maze.Dir dir)
     {
-      currentDir = dir;
-      animator.SetInteger("direction", (int) dir);
+      if(currentDir != dir) {
+        animator.SetInteger("direction", (int) dir);
+        currentDir = dir;
+      }
+
     }
 
     public Vector2Int GetCurrentTile() {

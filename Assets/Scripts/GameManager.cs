@@ -1,3 +1,4 @@
+//#define NO_GHOSTS
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,10 +6,9 @@ using UnityEngine;
 namespace PM {
 public enum GhostMode
 {
-  Chase = 0,
-  Scatter = 1,
-  Frightened = 2,
-  NumModes = 3
+  CHASE = 0,
+  SCATTER = 1,
+  FRIGHTENED = 2,
 }
 
 public class GameManager : MonoBehaviour
@@ -18,16 +18,23 @@ public class GameManager : MonoBehaviour
   // reference to the Maze, Pacman and Ghost objects
   [SerializeField] private Maze maze;
   [SerializeField] private Score score;
-  [SerializeField] private Pellet[] pellets;
+  [SerializeField] private Pellet[,] pellets;
   [SerializeField] private Pacman pacman;
   // TODO - make private?
   public Ghost[] ghosts {get; private set;}
 
-  [SerializeField] public GhostMode currentGhostMode { get; private set; }
-
-  [SerializeField] public float countdownTime { get; private set; }
+  // ----------- ghost mode fields -----------
+  // array with ghost intervals, containing countdown time and ghost mode
+  private GhostModeInterval[] ghostModeIntervals;
   // current ghost mode interval index
   private int gModeIntervalIndex;
+  // current ghost mode
+  [SerializeField] public GhostMode currentGhostMode { get; private set; }
+
+  // countdown time of the scatter chase timer
+  [SerializeField] public float scatterChaseTime { get; private set; }
+  // countdown time of the scatter chase timer
+  [SerializeField] public float frightenedTime { get; private set; }
 
   public void Awake() {
     // Singleton pattern
@@ -41,39 +48,53 @@ public class GameManager : MonoBehaviour
     }
 
     // create and instantiate the Maze GameObject
-    maze = GameFactory.InstantiatePrefab("Prefabs/Maze").GetComponent<Maze>();
+    maze = GameFactory.InstantiatePrefab("Prefabs/Maze", "maze").GetComponent<Maze>();
     maze.Initialize(GameSettings.GetMazeSettings());
 
-    // create and instantiate the Pacman GameObject
-    pacman = GameFactory.InstantiatePrefab("Prefabs/Pacman").GetComponent<Pacman>();
-    pacman.Initialize(GameSettings.GetPacmanSettings(), maze);
+    // create and instantiate the highscore GameObject
+    score = GameFactory.InstantiatePrefab("Prefabs/Score", "score").GetComponent<Score>();
+    // create and instantiate pellets
+    pellets = GameFactory.InstantiatePellets("Prefabs/Pellet", maze, score,
+      GameSettings.GetEnergizerPositions());
 
+    // create and instantiate the Pacman GameObject
+    pacman = GameFactory.InstantiatePrefab("Prefabs/Pacman", "pacman").GetComponent<Pacman>();
+    pacman.Initialize(GameSettings.GetPacmanSettings(), this);
+
+#if !NO_GHOSTS
     // create the ghosts
     ghosts = GameFactory.InstantiateGhosts(GameSettings.GetGhostSettings(), this);
+#endif
 
-    // create and instantiate the highscore GameObject
-    score = GameFactory.InstantiatePrefab("Prefabs/Score").GetComponent<Score>();
-
-    // create and instantiate pellets
-    pellets = GameFactory.InstantiatePellets("Prefabs/Pellet", maze, score);
+    // retrieve the ghostModeIntervals to manage countdown times and ghostmodes
+    ghostModeIntervals = GameSettings.GetGhostModeIntervals();
   }
 
 
 
   // initialize values on Awake
-  void Start() {
+  private void Start() {
     Debug.Log("GameManager - START");
-    //pacmanMov.Initialize(GameSettings.pacmanSettings, maze);
-    ResetGhostMode();
+    // start with first ghost mode interval
+    ResetGhostModeInterval();
   }
 
   // Update is called once per frame
-  void Update()
+  private void Update()
   {
-    countdownTime-= Time.deltaTime;
-    if(countdownTime <= 0) {
-      NextGhostMode();
+    if(currentGhostMode == GhostMode.FRIGHTENED){
+      frightenedTime -= Time.deltaTime;
+      if(frightenedTime <= 0) {
+        UpdateGhostMode(ghostModeIntervals[gModeIntervalIndex].mode);
+      }
+    } else {
+      // scatter chase timer is running
+      scatterChaseTime-= Time.deltaTime;
+      if(scatterChaseTime <= 0) {
+        NextGhostModeInterval();
+      }
     }
+
   }
 
 
@@ -81,31 +102,43 @@ public class GameManager : MonoBehaviour
 // =============================================================================
 // =============== ghost mode methods  =========================================
 // =============================================================================
-  void NextGhostMode()
+
+  public void EnergizerIsEaten()
+  {
+    Debug.Log( " Energizer is EATEN! ");
+    UpdateGhostMode(GhostMode.FRIGHTENED);
+    frightenedTime = 4f;
+  }
+
+  private void NextGhostModeInterval()
   {
     // increment ghost mode interval index
     gModeIntervalIndex++;
     // update ghosts  current index
-    UpdateGhostMode();
+    UpdateGhostModeInterval();
   }
 
-  void ResetGhostMode()
+  private void ResetGhostModeInterval()
   {
-    // increment ghost mode interval index
+    // reset ghost mode interval index to first interval
     gModeIntervalIndex = 0;
     // update ghosts  current index
-    UpdateGhostMode();
+    UpdateGhostModeInterval();
   }
 
-  void UpdateGhostMode() {
-    GhostModeInterval modeInterval = GameSettings.ghostModeIntervals[gModeIntervalIndex];
-
+  private void UpdateGhostModeInterval()
+  {
     // reset the timer to the interval of the current ghost mode
-    countdownTime = modeInterval.interval;
+    scatterChaseTime = ghostModeIntervals[gModeIntervalIndex].interval;
+    UpdateGhostMode(ghostModeIntervals[gModeIntervalIndex].mode);
+  }
+
+  private void UpdateGhostMode(GhostMode mode) {
     // cache the current ghost mode
-    currentGhostMode = modeInterval.mode;
+    currentGhostMode = mode;
     // update the ghostmode for each ghost
-#if CREATE_GHOSTS
+#if !NO_GHOSTS
+    Debug.Log("GameManager-UpdateGhostMode - New ghostmode: " + currentGhostMode);
     for(int i = 0; i < ghosts.Length; i++) {
       ghosts[i].SwitchMode(currentGhostMode);
     }
@@ -113,8 +146,27 @@ public class GameManager : MonoBehaviour
   }
 
 // =============================================================================
+// =============== Pellets  ====================================================
+// =============================================================================
+
+  public bool PacmanEatsPellet(Vector2Int tile) {
+    if(pellets[tile.x, tile.y] != null) {
+      Debug.Log("GameMAnager.PelletExistsAt tile: " + tile + ", it exist: " +
+        pellets[tile.x, tile.y]);
+      pellets[tile.x, tile.y].GetsEaten();
+      return true;
+    }
+    return false;
+  }
+
+// =============================================================================
 // =============== getters  ====================================================
 // =============================================================================
+
+  public bool GameModeIsFrightened ()
+  {
+    return currentGhostMode == GhostMode.FRIGHTENED;
+  }
   public Maze GetMaze() {
     Debug.Log("GameManager-GetMaze- maze: " + maze);
     return maze;

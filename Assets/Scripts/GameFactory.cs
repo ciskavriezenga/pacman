@@ -1,4 +1,4 @@
-#define SHOW_GHOST_TARGET_TILE
+//#define SHOW_GHOST_TARGET_TILE
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,9 +7,10 @@ namespace PM {
 
 public static class GameFactory {
 
-  public static GameObject InstantiatePrefab(string resourcePath) {
+  public static GameObject InstantiatePrefab(string resourcePath, string tag) {
     GameObject prefab = Resources.Load(resourcePath) as GameObject;
     prefab = GameObject.Instantiate(prefab, new Vector3(0, 0, 0), Quaternion.identity);
+    prefab.name = tag;
     return prefab;
   }
 
@@ -40,7 +41,7 @@ public static class GameFactory {
     GameManager gameManager)
   {
     // create and instantiate the Ghost GameObject
-    Ghost ghost = GameFactory.InstantiatePrefab("Prefabs/Ghost").GetComponent<Ghost>();
+    Ghost ghost = GameFactory.InstantiatePrefab("Prefabs/Ghost", settings.name).GetComponent<Ghost>();
 
     // TODO - use correct annimation controller
 
@@ -92,27 +93,39 @@ public static class GameFactory {
     return texture;
   }
 
-  public static Pellet[] InstantiatePellets(string resourcePath, Maze maze,
-    Score score)
+  public static Pellet[,] InstantiatePellets(string resourcePath, Maze maze,
+    Score score, Vector2Int[] energizerPositions)
   {
-    List<Pellet> pellets = new List<Pellet>();
+    GameObject pelletsParent = new GameObject();
+    pelletsParent.name = "pellets";
+
+    Pellet[,] pellets = new Pellet[maze.width, maze.height];
+
     // iterate over all tiles (i, j)
     for(int j = maze.borderSize; j < maze.height - maze.borderSize; j++) {
       for(int i = maze.borderSize; i < maze.width - maze.borderSize; i++) {
         Vector2Int tile = new Vector2Int(i, j);
-        if(maze.TileIsPath(tile) && !maze.TileIsGhostHouse(tile)) {
-          GameObject pelletGO = InstantiatePrefab(resourcePath);
+        if(maze.TileContainsPellet(tile)) {
+          GameObject pelletGO = InstantiatePrefab(resourcePath, "pellet");
           pelletGO.transform.position = maze.GetCenterPos(tile);
           Pellet pellet = pelletGO.GetComponent<Pellet>();
-          // TODO - super pellet
-          // TODO - not in ghosthouse
-          pellet.Initialize(false, score);
-          pellets.Add(pellet);
+          // check if the pellet is an energizer or not
+          bool isEnergizer = false;
+          // TODO replace with Set data structure!
+          for(int p = 0; p < energizerPositions.Length; p++) {
+            if(tile == energizerPositions[p]){
+              Debug.Log("Energizer at tile: " + tile);
+              isEnergizer = true;
+            }
+          }
+          pellet.Initialize(isEnergizer, score);
+          pellet.transform.SetParent(pelletsParent.transform);
+          pellets[i, j] = pellet;
         }
 
       }
     }
-    return pellets.ToArray();;
+    return pellets;
   }
 }
 }
