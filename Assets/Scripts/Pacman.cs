@@ -18,14 +18,14 @@ namespace PM {
     // tile in the pacman maze grid
     [SerializeField] private Vector2Int currentTile;
     // current movement directions
-    [SerializeField] public Maze.Dir currentDir {get; private set;}
+    [SerializeField] public Dir currentDir {get; private set;}
     // target position
     [SerializeField] private Vector2 moveToPos;
 
     // --------------- Graphics and UI ---------------------------------------
     // animator reference
     private Animator animator;
-    private Maze.Dir lastHitKeyDir = Maze.Dir.None;
+    private Dir lastHitKeyDir = Dir.NONE;
 
     public void Initialize(PacmanSettings settings, GameManager gameManager) {
       this.settings = settings;
@@ -61,10 +61,10 @@ namespace PM {
       ClearLastHitKey();
 
       // if there is a arrow key is cached, act on it
-      if(lastHitKeyDir != Maze.Dir.None) {
+      if(lastHitKeyDir != Dir.NONE) {
         if(ChangeDir(lastHitKeyDir)) {
           // we changed the direction, clear the key cache
-          lastHitKeyDir = Maze.Dir.None;
+          lastHitKeyDir = Dir.NONE;
         }
       }
     }
@@ -72,26 +72,26 @@ namespace PM {
     // caches the last hit key to lastHitKeyDir class member
     void CacheLastHitArrowKey() {
       if (Input.GetKeyDown(KeyCode.UpArrow)) {
-        lastHitKeyDir = Maze.Dir.Up;
+        lastHitKeyDir = Dir.UP;
       }
       if (Input.GetKeyDown(KeyCode.RightArrow)) {
-        lastHitKeyDir = Maze.Dir.Right;
+        lastHitKeyDir = Dir.RIGHT;
       }
       if (Input.GetKeyDown(KeyCode.DownArrow)) {
-        lastHitKeyDir = Maze.Dir.Down;
+        lastHitKeyDir = Dir.DOWN;
       }
       if(Input.GetKeyDown(KeyCode.LeftArrow)) {
-        lastHitKeyDir = Maze.Dir.Left;
+        lastHitKeyDir = Dir.LEFT;
       }
     }
 
     // clears the cache of the last hit key if key up event equals the last hit key
     void ClearLastHitKey() {
-      if (Input.GetKeyUp(KeyCode.UpArrow) && lastHitKeyDir == Maze.Dir.Up
-      || Input.GetKeyUp(KeyCode.RightArrow) && lastHitKeyDir == Maze.Dir.Right
-      || Input.GetKeyUp(KeyCode.DownArrow) && lastHitKeyDir == Maze.Dir.Down
-      || Input.GetKeyUp(KeyCode.LeftArrow) && lastHitKeyDir == Maze.Dir.Left) {
-        lastHitKeyDir = Maze.Dir.None;
+      if (Input.GetKeyUp(KeyCode.UpArrow) && lastHitKeyDir == Dir.UP
+      || Input.GetKeyUp(KeyCode.RightArrow) && lastHitKeyDir == Dir.RIGHT
+      || Input.GetKeyUp(KeyCode.DownArrow) && lastHitKeyDir == Dir.DOWN
+      || Input.GetKeyUp(KeyCode.LeftArrow) && lastHitKeyDir == Dir.LEFT) {
+        lastHitKeyDir = Dir.NONE;
       }
     }
 
@@ -146,7 +146,7 @@ namespace PM {
       }
     }
 
-    bool ChangeDir(Maze.Dir dir)
+    bool ChangeDir(Dir dir)
     {
       // no need to change if the currentDirection is the same
       if(currentDir != dir) {
@@ -174,7 +174,7 @@ namespace PM {
       transform.position = maze.SnapToPixel(currentPos);
     }
 
-    void SetDir(Maze.Dir dir)
+    void SetDir(Dir dir)
     {
       if(currentDir != dir) {
         animator.SetInteger("direction", (int) dir);
@@ -183,8 +183,7 @@ namespace PM {
 
     }
 
-    public Vector2Int GetCurrentTile() {
-      return currentTile;
-    }
+    public Vector2Int GetCurrentTile() { return currentTile;}
+
   }
 }

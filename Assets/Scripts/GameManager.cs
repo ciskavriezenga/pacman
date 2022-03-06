@@ -9,6 +9,8 @@ public enum GhostMode
   CHASE = 0,
   SCATTER = 1,
   FRIGHTENED = 2,
+  PACING_HOME = 3,
+  LEAVING_HOUSE = 4
 }
 
 public class GameManager : MonoBehaviour
@@ -46,6 +48,8 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
     }
+    // initialize the random number generator with a seed
+    Random.InitState(0);
 
     // create and instantiate the Maze GameObject
     maze = GameFactory.InstantiatePrefab("Prefabs/Maze", "maze").GetComponent<Maze>();
@@ -151,24 +155,31 @@ public class GameManager : MonoBehaviour
 
   public bool PacmanEatsPellet(Vector2Int tile) {
     if(pellets[tile.x, tile.y] != null) {
-      Debug.Log("GameMAnager.PelletExistsAt tile: " + tile + ", it exist: " +
-        pellets[tile.x, tile.y]);
       pellets[tile.x, tile.y].GetsEaten();
       return true;
     }
     return false;
   }
 
+
 // =============================================================================
 // =============== getters  ====================================================
 // =============================================================================
+
+  public bool PathIsEmpty(Vector2Int tile) {
+    for(int i = 0; i < ghosts.Length; i++) {
+      if(ghosts[i].GetCurrentTile() == tile) return false;
+    }
+    if(pacman.GetCurrentTile() == tile) return false;
+    return true;
+  }
+
 
   public bool GameModeIsFrightened ()
   {
     return currentGhostMode == GhostMode.FRIGHTENED;
   }
   public Maze GetMaze() {
-    Debug.Log("GameManager-GetMaze- maze: " + maze);
     return maze;
   }
   public Pacman GetPacman() { return pacman; }

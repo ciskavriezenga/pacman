@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PM {
   public struct Move {
     public Vector2Int tile { get; private set; }
-    public Maze.Dir direction;
+    public Dir direction;
     private Vector2Int[] pixels;
     private int pixelIndex;
 
@@ -17,7 +17,7 @@ namespace PM {
     };
 
     // TODO - remove ref
-    public Move(Vector2Int tile, Maze.Dir direction, ref Maze maze) {
+    public Move(Vector2Int tile, Dir direction, Maze maze) {
       this.tile = tile;
       this.direction = direction;
       pixelIndex = 0;

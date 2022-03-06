@@ -4,6 +4,17 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 namespace PM {
+
+  public enum Dir
+  {
+    NONE = -1,
+    RIGHT = 0,
+    DOWN = 1,
+    LEFT = 2,
+    UP = 3,
+    SIZE = 4
+  }
+
   public class Maze : MonoBehaviour
   {
     // fields set in editor
@@ -27,22 +38,12 @@ namespace PM {
 
     // TODO - replace met standard directions unity?
     public readonly Vector2Int[] directions = {
-      new Vector2Int(0,1),  // up
       new Vector2Int(1,0),  // right
       new Vector2Int(0,-1), // down
-      new Vector2Int(-1,0)  // left
+      new Vector2Int(-1,0),  // left
+      new Vector2Int(0,1)  // up
     };
 
-    // TODO - maybe move to interface class Movement? or utility movement class?
-    public enum Dir
-    {
-      None = -1,
-      Up = 0,
-      Right = 1,
-      Down = 2,
-      Left = 3,
-      Size = 4
-    }
 
     // values for the process of snapping the position to a pixel
     private int numPixelsPerTile = 8;
@@ -66,10 +67,10 @@ namespace PM {
       // pixel positions for tiles, based on the direction of ghost / pacman
       float edge = (float) (numPixelsPerTile - 1) / pixelateFactor;
       targetPosOnTile = new Vector2[4] {
-        new Vector2(0.5f, 0.0f),  // entering tile from below
         new Vector2(0.0f, 0.5f),  // entering tile from left
         new Vector2(0.5f, edge),  // entering tile from above
-        new Vector2(edge, 0.5f)   // entering tile from right
+        new Vector2(edge, 0.5f),   // entering tile from right
+        new Vector2(0.5f, 0.0f)  // entering tile from below
       };
 
       // create MazeTileTypes - models that hold the maze tile types
@@ -79,10 +80,7 @@ namespace PM {
       ghosthouseTileTypes = new MazeTileTypes(settings.imgGhostHouseTiles, width, height);
 
 
-      ghosthouseTileTypes.LogTiles(14, 16, 20, 18);
       // draw the tiles to the tilemap, according to the tiletype models
-      //DrawTiles(pathsTileTypes);
-    //  DrawTiles(ghosthouseTileTypes);
       DrawTiles(pathsTileTypes);
       DrawTiles(ghosthouseTileTypes);
       DrawTiles(ghostZonesTileTypes);
@@ -163,6 +161,7 @@ namespace PM {
       return currentTile + tileDir;
     }
 
+
     public Vector2Int GetTileInDirection(Vector2Int currentTile, Dir dir,
       int numTilesAway, bool addBugOffset = false) {
       // NOTE: currentTile is a copy, not a reference to the passed Coordinate
@@ -174,9 +173,9 @@ namespace PM {
        *         distance to the expected up offset"
        *        source: The Pacman Dosier - gamasutra
        */
-      if(addBugOffset && dir == Dir.Up) {
+      if(addBugOffset && dir == Dir.UP) {
         // recursive call to add error offset to the left
-        return GetTileInDirection(currentTile + tileDir, Dir.Left, numTilesAway);
+        return GetTileInDirection(currentTile + tileDir, Dir.LEFT, numTilesAway);
       }
 
       return currentTile + tileDir;
@@ -185,14 +184,14 @@ namespace PM {
     // returns the direction based on two adjacent tiles
     public Dir GetDirectionAdjacentTiles(Vector2Int tile1, Vector2Int tile2) {
       Vector2 tileDelta = tile2 - tile1;
-      // up
-      if(tileDelta.Equals(directions[0])) return Dir.Up;
       // Right
-      if(tileDelta.Equals(directions[1])) return Dir.Right;
+      if(tileDelta.Equals(directions[0])) return Dir.RIGHT;
       // down
-      if(tileDelta.Equals(directions[2])) return Dir.Down;
+      if(tileDelta.Equals(directions[1])) return Dir.DOWN;
       // left
-      if(tileDelta.Equals(directions[3])) return Dir.Left;
+      if(tileDelta.Equals(directions[2])) return Dir.LEFT;
+      // up
+      if(tileDelta.Equals(directions[3])) return Dir.UP;
 
       throw new System.Exception("Maze.GetDirection - direction = none");
     }
@@ -238,12 +237,12 @@ namespace PM {
       return pathsTileTypes.GetTileID(tile) == MazeTileTypes.TileID.PATH;
     }
 
-/*    public bool TileIsGhostHouse(Vector2Int tile)
+    public bool TileIsGhostHouse(Vector2Int tile)
     {
-      return ghostHouseTileTypes.GetTileID(tile)
-        == MazeTileTypes.TileID.GhostHouse;
+      return ghosthouseTileTypes.GetTileID(tile)
+        == MazeTileTypes.TileID.GHOST_HOUSE_WALL_TILE;
     }
-*/
+
 
     public bool TileGhostNoUpward(Vector2Int tile)
     {
@@ -272,9 +271,7 @@ namespace PM {
       return ghostZonesTileTypes.GetTileID(tile) == MazeTileTypes.TileID.TUNNEL;
     }
 
-/*    public MazeTileTypes.TileID GetTileType(Vector2Int tile) {
-      return mazeTileTypes.GetTileID(tile);
-    }*/
+
 
   // ==============================================================================
   // =============== dinstance utility methods ===================================
@@ -297,43 +294,6 @@ namespace PM {
   // ==============================================================================
   // =============== Tile map method ==========================================-
   // ==============================================================================
-
-
-  /*  private void DrawTiles(MazeTileTypes tileTypes)
-    {
-      Debug.Log("******** DRAW TILE TYPES IS CALLED **********");
-      // also draw a border with rule tiles, to ensure correct display of border
-      int size = width * height;
-      for(int i = 0; i < size; i++) {
-        Vector2Int tileCoord = new Vector2Int(0,0);
-        tileCoord.y = i / width;
-        tileCoord.x = i - (tileCoord.y * width); // * is cheaper than %
-        Vector3Int pos = new Vector3Int(tileCoord.x, tileCoord.y, 0);
-        // if tile coordinate is wall - add wall tile
-
-        MazeTileTypes.TileID tileID = tileTypes.GetTileID(tileCoord);
-        if(tileID != MazeTileTypes.TileID.PATH) {
-          // place the corresponding wall tile
-          switch(tileID) {
-            case MazeTileTypes.TileID.WALL:
-              tilemapWalls.SetTile(pos, ruleTileRegWall);
-              break;
-            case MazeTileTypes.TileID.GHOST_HOUSE_WALL_TILES:
-              tilemapWalls.SetTile(pos, ruleTileGhostHouse);
-              break;
-            case MazeTileTypes.TileID.GHOST_DOOR:
-              // TODO - position the door based on a seperate image,
-              //        so you can take the orientation into account
-              tilemapGhostDoor.SetTile(pos, ruleTileGhostDoor);
-              break;
-            default:
-              // default - do nothing
-              break;
-          }
-        }
-      }
-    }*/
-
 
     private void DrawTiles(MazeTileTypes tileTypes)
     {
@@ -360,16 +320,6 @@ namespace PM {
         }
       }
     }
-    //
-    // private void DrawGhostHouseWalls(MazeTileTypes tileTypes)
-    // {
-    //
-    // }
-    //
-    // private void DrawGhostDoor(MazeTileTypes tileTypes)
-    // {
-    //
-    // }
 
 
   }

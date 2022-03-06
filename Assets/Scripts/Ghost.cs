@@ -10,29 +10,29 @@ public class Ghost : MonoBehaviour
 {
   // --------------- directions and related -----------------------------------
   // enum to for the different chase schemes
-  public enum CHASEScheme
+  public enum ChaseScheme
   {
-    TargetPacman = 0,   // regular Blinky behaviour
-    AheadOfPacman = 1,  // regular Pinky behaviour
-    Collaborate = 2,    // regular Inky behaviour, based on blinky pos and pm
-    CircleAround = 3,   // regular Clyde behaviour
+    TARGET_PACMAN = 0,   // regular Blinky behaviour
+    AHEAD_OF_PACMAN = 1,  // regular Pinky behaviour
+    COLLABORATE = 2,    // regular Inky behaviour, based on blinky pos and pm
+    CIRCLE_AROUND = 3,   // regular Clyde behaviour
   }
 
   // the oposite directions to a given direction
-  private Maze.Dir[] oppositeDirs = {
-    Maze.Dir.Down, // Up --> down
-    Maze.Dir.Left, // Right --> Left
-    Maze.Dir.Up, // Down --> up
-    Maze.Dir.Right, // left --> right
+  private Dir[] oppositeDirs = {
+    Dir.LEFT, // Right --> Left
+    Dir.UP, // Down --> up
+    Dir.RIGHT, // left --> right
+    Dir.DOWN // Up --> down
   };
 
   // 2d array with the allowed directions based on current direction
   // prefered order up, left, down, right
-  private Maze.Dir[][] allowedDirs = {
-    new Maze.Dir[] {Maze.Dir.Up, Maze.Dir.Left, Maze.Dir.Right}, // cur = R
-    new Maze.Dir[] {Maze.Dir.Up, Maze.Dir.Down, Maze.Dir.Right}, // cur = D
-    new Maze.Dir[] {Maze.Dir.Left, Maze.Dir.Down, Maze.Dir.Right}, // cur = L
-    new Maze.Dir[] {Maze.Dir.Up, Maze.Dir.Left, Maze.Dir.Down} // cur = U
+  private Dir[][] allowedDirs = {
+    new Dir[] {Dir.UP, Dir.DOWN, Dir.RIGHT}, // cur = R
+    new Dir[] {Dir.LEFT, Dir.DOWN, Dir.RIGHT}, // cur = D
+    new Dir[] {Dir.UP, Dir.LEFT, Dir.DOWN}, // cur = L
+    new Dir[] {Dir.UP, Dir.LEFT, Dir.RIGHT} // cur = U
   };
 
 
@@ -66,7 +66,7 @@ public class Ghost : MonoBehaviour
   // moves - hold the moves one step ahead in time, current and last moves
   private Queue<Move> nextMoves = new Queue<Move>();
   private Move currentMove;
-  private Maze.Dir currentDir;
+  private Dir currentDir;
   // TODO - this movelastmove  - better + easier + clearer flow possible?
   private Move movesLastMove;
   // TODO test idea: allows to let the ghosts generate moves further ahead
@@ -82,6 +82,8 @@ public class Ghost : MonoBehaviour
   [SerializeField] private RuntimeAnimatorController regularAnimatorController;
   [SerializeField] private RuntimeAnimatorController scaredAnimatorController;
 
+  // ghost house fields
+  bool waitingInGhostHouse;
 
 
 // =============================================================================
@@ -103,11 +105,16 @@ public class Ghost : MonoBehaviour
     animator = GetComponent<Animator>();
     animator.runtimeAnimatorController = regularAnimatorController;
     // cache the current ghost mode
-    currentGhostMode = gameManager.currentGhostMode;
+    if(settings.startInGhosthouse) {
+      currentGhostMode = GhostMode.WAITING_IN_HOUSE;
+    } else {
+      gameManager.currentGhostMode;
+    }
 
     // set initial values
-    currentTile = settings.startTile;
-    currentPos = maze.GetCenterPos(currentTile);
+    currentTile = maze.GetTileCoordinate(settings.startPos);
+    currentPos = settings.startPos;
+    //waitingInGhostHouse = settings.startInGhosthouse;
 
     currentSpeed = settings.normSpeed;
 
@@ -189,24 +196,89 @@ public class Ghost : MonoBehaviour
     nextMoves.Enqueue(movesLastMove);
   }
 
-  Move CreateSingleMove(Vector2Int fromTile, Maze.Dir direction)
+  Move CreateSingleMove(Vector2Int fromTile, Dir direction)
   {
-    // TODO - add check if frightened - up tile movement is allowed!
-    Vector2Int targetTile = GetTargetTile();
+    // ---------------- FRIGHTENED ------------------------------------
+    switch(currentGhostMode) {
+      case GhostMode.PACING_HOME:
+        break;
+      case GhostMode.LEAVING_HOME:
+        break;
+      case GhostMode.FRIGHTENED:
+        return CreateFrightenedMove(fromTile, direction);
+    }
+    // ---------------- CHASE OR SCATTER ------------------------------
+    return CreateChaseScatterMove(fromTile, direction);
+  }
+
+  private Move CreateFrightenedMove(Vector2Int fromTile, Dir direction)
+  {
+    // "attempts the remaining directions in this order:
+    // up, left, down, and right"
+    // NOTE: up movement on no-upmovement tiles is allowed while frightened
+    Dir dir = GetRandomDirection();
+    Vector2Int randomTile = maze.GetAdjacentTile(fromTile, dir);
+
+    int numTimes = 0;
+    while(dir == oppositeDirs[(int) direction] || !maze.TileIsPath(randomTile)) {
+      Debug.Log("FRIGHTENED - not validate random move in direction "
+        + dir
+        + ", current direction: " + direction
+        + ", from tile: " + fromTile
+        + ", random tile = " + randomTile
+        + ", tile is path: " + maze.TileIsPath(randomTile)
+      );
+      dir = (Dir) ((int)dir - 1);
+      // wrap direction if equal NONE  (-1)
+      if(dir == Dir.NONE) dir = Dir.UP;
+      randomTile = maze.GetAdjacentTile(fromTile, dir);
+      if(numTimes > 4) {
+        Debug.Log("FRIGHTENED - ******* ERROR ******* should not happen");
+        break;
+      }
+      numTimes++;
+    }
+    Debug.Log("FRIGHTENED - found a valid move in direction "
+      + ", current direction: " + direction
+      + ", from tile: " + fromTile
+      + ", random tile = " + randomTile
+      + ", tile is path: " + maze.TileIsPath(randomTile)
+    );
+    // create a new Move struct
+    // NOTE: corresponding pixels are calculated in Move constructor
+    return new Move(randomTile, dir, maze);
+  }
+
+  private Move CreateChaseScatterMove(Vector2Int fromTile, Dir direction)
+  {
+    // retrieve adjacentTiles
+    Dir[] directions = allowedDirs[(int) direction];
+    Vector2Int[] adjacentTiles = GetAdjacentTiles(fromTile, directions);
+
+
+    // return the tile that corresponds to the current mode
+    // NOTE: Ghosts use a pseudo-random number generator (PRNG) to pick a way
+    // to turn at each intersection when frightened. - no target tile needed
+    // therefore only two relavnt options: either scatter or CHASE
+    Vector2Int targetTile;
+    if(currentGhostMode == GhostMode.CHASE) {
+       = settings.scatterTile;
+    } else {
+      targetTile = settings.scatterTile;
+    }
+
 #if SHOW_GHOST_TARGET_TILE
     targetTileSR.transform.position = maze.GetCenterPos(targetTile);
 #endif
-    // get the tile of the new move
-    // retrieve adjacentTiles
-    Maze.Dir[] directions = allowedDirs[(int) direction];
-    Vector2Int[] adjacentTiles = GetAdjacentTiles(fromTile, directions);
     // find the best move, most near to target tile
     int indexBestMove = -1;
     int smallestDistance = int.MaxValue;
     for(int i = 0; i < 3; i++) {
-      if(maze.TileIsPath(adjacentTiles[i])) {
+      if(maze.TileIsPath(adjacentTiles[i])
+        || maze.TileIsGhostDoor(adjacentTiles[i]) && directions[i] == Dir.UP
+        && gameManager.PathIsEmpty(adjacentTiles[i])) {
         // only allow movement up if allowed
-        if(directions[i] != Maze.Dir.Up || !maze.TileGhostNoUpward(fromTile)) {
+        if(directions[i] != Dir.UP || !maze.TileGhostNoUpward(fromTile)) {
           int distance =
             maze.SquaredEuclideanDistance(targetTile, adjacentTiles[i]);
           if(distance < smallestDistance) {
@@ -216,17 +288,27 @@ public class Ghost : MonoBehaviour
         }
       }
     } // end forloop
-
+    Debug.Log("CreateChaseScatterMove- indexBestMove: " + indexBestMove);
     // create a new Move struct
     // NOTE: corresponding pixels are calculated in Move constructor
-
-
-    // TODO - remove ref
-    return new Move(adjacentTiles[indexBestMove], directions[indexBestMove], ref maze);
-
+    if(indexBestMove == -1) {
+      if(maze.TileIsGhostHouse(fromTile)) {
+          // swap direction
+          SwitchDirection(ref direction);
+          return CreateChaseScatterMove(fromTile, direction);
+      } else {
+        Debug.Log("***** SHOULD NOT HAPPEN");
+      }
+    }
+    return new Move(adjacentTiles[indexBestMove], directions[indexBestMove], maze);
   }
 
-  Vector2Int[] GetAdjacentTiles(Vector2Int departureTile, Maze.Dir[] directions)
+
+  private Dir GetRandomDirection() {
+    return (Dir) (Random.value * 3.999999999999f);
+  }
+
+  Vector2Int[] GetAdjacentTiles(Vector2Int departureTile, Dir[] directions)
   {
     // copy relative adjacentTiles that correspond with the allowed directions
     Vector2Int[] adjacentTiles = {
@@ -237,7 +319,7 @@ public class Ghost : MonoBehaviour
 
     // add the departure tile position to relative adjactentTiles
     for(int i = 0; i < 3; i++) {
-      adjacentTiles[i] = adjacentTiles[i] + (departureTile);
+      adjacentTiles[i] = adjacentTiles[i] + departureTile;
       maze.WrapTile(ref adjacentTiles[i]);
     }
     // return resulting adjacent tiles
@@ -295,23 +377,8 @@ public class Ghost : MonoBehaviour
 // =============== Target tile methods =========================================
 // =============================================================================
 
-  // returns the target tile -
-  // TODO - method returns path based on ghosttype
-  Vector2Int GetTargetTile()
-  {
-    // return the tile that corresponds to the current mode
-    // NOTE: Ghosts use a pseudo-random number generator (PRNG) to pick a way
-    // to turn at each intersection when frightened. - no target tile needed
-    // therefore only two relavnt options: either scatter or CHASE
-    if(currentGhostMode == GhostMode.CHASE) {
-      return GetGhostTypeTargetTile();
-    }
-    return settings.scatterTile;
-  }
 
-  public Vector2Int GetCurrentTile() { return currentTile;}
-
-  Vector2Int GetGhostTypeTargetTile()
+  Vector2Int GetChaseTargetTile()
   {
     Vector2Int targetTile = new Vector2Int(0,0);
 
@@ -319,8 +386,9 @@ public class Ghost : MonoBehaviour
      * NOTE:  all information below about the schemes comes from the source:
      *  https://www.gamasutra.com/view/feature/3938/the_pacman_dossier.php?print=1
      */
+
     switch(settings.chaseScheme) {
-      case CHASEScheme.TargetPacman:
+      case ChaseScheme.TARGET_PACMAN:
         /*
          * NOTE:  Blinky's targeting scheme
          *        "Blinky's is the most simple and direct, using Pac-Man's
@@ -329,7 +397,7 @@ public class Ghost : MonoBehaviour
 
         return pacman.GetCurrentTile();
 
-      case CHASEScheme.AheadOfPacman:
+      case ChaseScheme.AHEAD_OF_PACMAN:
         /*
          * NOTE:  Pinky's targeting scheme
          *        "Pinky selects an offset four tiles away from Pac-Man in
@@ -342,12 +410,12 @@ public class Ghost : MonoBehaviour
 
         // call GetTileInDirection with addBugOffset set to true to include
         // the bug that results in an additional 4 tiles to the left if
-        // Pac-Man's direction == Dir.Up
+        // Pac-Man's direction == Dir.UP
 
         return maze.GetTileInDirection(pacman.GetCurrentTile(),
           pacman.currentDir, 4, true);
 
-      case CHASEScheme.Collaborate:
+      case ChaseScheme.COLLABORATE:
         /*
          * NOTE:  Inky's targeting scheme
          *        1. Draw line from Bliny to 2 tiles in front of Pac-man
@@ -369,7 +437,7 @@ public class Ghost : MonoBehaviour
 #endif
         // add to the wingman's current tile
         return wingman.currentTile + targetVector;
-      case CHASEScheme.CircleAround:
+      case ChaseScheme.CIRCLE_AROUND:
         /*
          * Note:  Clyde's targeting scheme
          *        "When more than eight tiles away, he uses Pac-Man's tile as
@@ -386,8 +454,8 @@ public class Ghost : MonoBehaviour
 
       default:
         throw new System.Exception("Ghost.GetGhostTypeTargetTile - " +
-          "CHASEScheme not found.");
-    }
+          "ChaseScheme not found.");
+    } // end switch chaseScheme
   }
 
   public void SetWingman(Ghost wingman)
@@ -420,6 +488,7 @@ public class Ghost : MonoBehaviour
     Debug.Log("*** Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
 #endif
     /*
+     *
      * Ghosts are forced to reverse direction by the system anytime the
      * mode changes from:
      *  • chase-to-scatter
@@ -432,33 +501,42 @@ public class Ghost : MonoBehaviour
      * Reference: The Pacman Dosier - Gamasutra
      */
 
-    if(currentGhostMode == GhostMode.FRIGHTENED) {
-      // current mode is frightened, new mode not --> animation back to normal
-      animator.runtimeAnimatorController = regularAnimatorController;
-    } else {
-      if(newGhostMode == GhostMode.FRIGHTENED) {
-        // switch to scared animation controller
-        animator.runtimeAnimatorController = scaredAnimatorController;
+    // Do NOT change mode if the ghost is waiting in the ghosthouse
+    if(currentGhostMode != WAITING_IN_HOUSE) {
+      if(currentGhostMode == GhostMode.FRIGHTENED) {
+        // current mode is frightened, new mode not --> animation back to normal
+        animator.runtimeAnimatorController = regularAnimatorController;
+      } else {
+        if(newGhostMode == GhostMode.FRIGHTENED) {
+          // switch to scared animation controller
+          animator.runtimeAnimatorController = scaredAnimatorController;
+        }
+          SwitchDirection(ref currentMove);
       }
-        SwitchDirection(ref currentMove);
-    }
-    // cache the new ghost mode
-    currentGhostMode = newGhostMode;
+      // cache the new ghost mode
+      currentGhostMode = newGhostMode;
 
-    ResetMoves(currentMove);
+      ResetMoves(currentMove);
+    }
   }
 
-  void SwitchDirection(ref Move move) {
+  void SwitchDirection(ref Move move)
+  {
     move.direction = oppositeDirs[(int) move.direction];
   }
 
-  void SetDir(Maze.Dir dir) {
+  void SwitchDirection(ref Dir dir)
+  {
+    dir = oppositeDirs[(int) dir];
+  }
+
+  void SetDir(Dir dir)
+  {
     if(dir != currentDir) {
       animator.SetInteger("direction", (int) dir);
       currentDir = dir;
     }
-
   }
-
+  public Vector2Int GetCurrentTile() { return currentTile;}
 }
 }

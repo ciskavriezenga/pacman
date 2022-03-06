@@ -39,7 +39,7 @@ public struct PacmanSettings {
   public float frightDotSpeed;
   // position and direction
   public Vector2 startPos;
-  public Maze.Dir startDirection;
+  public Dir startDirection;
   // info
   public string settingsName;
 
@@ -47,7 +47,7 @@ public struct PacmanSettings {
     float overallSpeed,
     float normSpeedPerc, float normDotSpeedPerc,
     float frightSpeedPerc, float frightDotSpeedPerc,
-    Vector2 startPos, Maze.Dir startDirection,
+    Vector2 startPos, Dir startDirection,
     string settingsName)
   {
     // speed
@@ -81,15 +81,16 @@ public struct GhostModeInterval {
 // =============== GhostSettings================================================
 // =============================================================================
 public struct GhostSettings {
-  // position and direction
-  public Vector2Int startTile;
-  public Maze.Dir startDirection;
+  // start fields: position, direction, start in ghostHouse
+  public Vector2 startPos;
+  public Dir startDirection;
+  public bool startInGhosthouse
   // speed
   public float normSpeed;
   public float frightSpeed;
   public float tunnelSpeed;
   // path finding fields
-  public Ghost.CHASEScheme chaseScheme;
+  public Ghost.ChaseScheme chaseScheme;
   public Vector2Int scatterTile;
   // info
   public Color color;
@@ -97,17 +98,18 @@ public struct GhostSettings {
 
   public GhostSettings(
     // position and direction
-    Vector2Int startTile, Maze.Dir startDirection,
+    Vector2 startPos, Dir startDirection, bool startInGhosthouse
     // speed
     float normSpeed, float frightSpeed, float tunnelSpeed,
     // path finding fields
-    Ghost.CHASEScheme chaseScheme, Vector2Int scatterTile,
+    Ghost.ChaseScheme chaseScheme, Vector2Int scatterTile,
     // info
     Color color, string name)
   {
     // position and direction
-    this.startTile = startTile;
+    this.startPos = startPos;
     this.startDirection = startDirection;
+    this.startInGhosthouse = startInGhosthouse;
     // speed
     this.normSpeed = normSpeed;
     this.frightSpeed = frightSpeed;
@@ -138,7 +140,7 @@ public static class GameSettings {
     // speed: overall speed, percentages: norm, normDot, fright, frightDot
     overallSpeed, 0.8f, 0.71f, 0.9f, 0.79f,
     // start position and direction
-    new Vector2(16f, 9.5f), Maze.Dir.Left,
+    new Vector2(16f, 9.5f), Dir.LEFT,
     // info - name
     "default-pacman-settings");
   }
@@ -204,12 +206,13 @@ public static class GameSettings {
       // blinky
       new GhostSettings (
         // position and direction
-        new Vector2Int(27, 31),         // start tile
-        Maze.Dir.Left,                  // start direction
+        new Vector2(27f, 31f),         // start pos
+        Dir.LEFT,                  // start direction
+        false,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
-        Ghost.CHASEScheme.TargetPacman, // chase scheme
+        Ghost.ChaseScheme.TARGET_PACMAN, // chase scheme
         new Vector2Int(27, 35),         // scatter tile
         // info
         Color.red,
@@ -218,13 +221,14 @@ public static class GameSettings {
       // Inky
       new GhostSettings (
         // position and direction
-        new Vector2Int(27, 3),          // start tile
-        Maze.Dir.Left,                  // start direction
+        new Vector2(14.0f, 18.5f),          // start pos
+        Dir.UP,                  // start direction
+        true,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
-        Ghost.CHASEScheme.TargetPacman, // chase scheme
-        //Ghost.CHASEScheme.Collaborate, // chase scheme
+        Ghost.ChaseScheme.TARGET_PACMAN, // chase scheme
+        //Ghost.ChaseScheme.COLLABORATE, // chase scheme
         new Vector2Int(27, 0),         // scatter tile
         // info
         Color.cyan,
@@ -233,13 +237,14 @@ public static class GameSettings {
       // pinky
       new GhostSettings (
         // position and direction
-        new Vector2Int(4, 31),          // start tile
-        Maze.Dir.Right,                  // start direction
+        new Vector2(4f, 31f),          // start pos
+        Dir.RIGHT,                  // start direction
+        false,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
-        Ghost.CHASEScheme.TargetPacman, // chase scheme
-        //Ghost.CHASEScheme.AheadOfPacman, // chase scheme
+        Ghost.ChaseScheme.TARGET_PACMAN, // chase scheme
+        //Ghost.ChaseScheme.AHEAD_OF_PACMAN, // chase scheme
         new Vector2Int(4, 35),         // scatter tile
         // info
         Color.magenta,
@@ -248,13 +253,14 @@ public static class GameSettings {
       // Clyde
       new GhostSettings (
         // position and direction
-        new Vector2Int(4, 3),          // start tile
-        Maze.Dir.Right,                // start direction
+        new Vector2(4f, 3f),          // start pos
+        Dir.RIGHT,                // start direction
+        false,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
-        Ghost.CHASEScheme.TargetPacman, // chase scheme
-        //Ghost.CHASEScheme.CircleAround, // chase scheme
+        Ghost.ChaseScheme.TARGET_PACMAN, // chase scheme
+        //Ghost.ChaseScheme.CIRCLE_AROUND, // chase scheme
         new Vector2Int(4, 0),         // scatter tile
         // info
         new Color(1f, 0.5f, 0f),
