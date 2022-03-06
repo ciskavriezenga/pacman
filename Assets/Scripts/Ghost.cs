@@ -50,9 +50,7 @@ public class Ghost : MonoBehaviour
 
   // fields related to speed of ghost
   //[SerializeField] private float currentSpeed;
-  public float currentSpeed;
-  private float slowDownSpeedMultiplier = 0.5f;
-  private bool isSlowedDown = false;
+  [SerializeField] private float currentSpeed;
 
   // ghost mode, either scatter, frightened, chase
   private GhostMode currentGhostMode;
@@ -111,7 +109,7 @@ public class Ghost : MonoBehaviour
     currentTile = settings.startTile;
     currentPos = maze.GetCenterPos(currentTile);
 
-    currentSpeed = settings.normalSpeed;
+    currentSpeed = settings.normSpeed;
 
     // add first move - start up
     // TODO - fix this setup step - pos in ghost house
@@ -254,10 +252,14 @@ public class Ghost : MonoBehaviour
   void ProcessCurrentTileType() {
     if(maze.TileIsTeleport(currentTile)){
       Teleport();
-    } else if (maze.TileIsTunnel(currentTile)) {
-      SlowDownSpeed();
+    } else if (currentGhostMode == GhostMode.FRIGHTENED) {
+      currentSpeed = settings.frightSpeed;
     } else {
-      ResetSpeed();
+      if (maze.TileIsTunnel(currentTile)) {
+        currentSpeed = settings.tunnelSpeed;
+      } else {
+        currentSpeed = settings.normSpeed;
+      }
     }
   }
 
@@ -288,23 +290,6 @@ public class Ghost : MonoBehaviour
     GenerateMoves();
   }
 
-  // slows down current speed based on normal speed an slowDownSpeedMultiplier
-  void SlowDownSpeed()
-  {
-    if(!isSlowedDown) {
-      isSlowedDown = true;
-      currentSpeed = settings.normalSpeed * slowDownSpeedMultiplier;
-    }
-  }
-
-  // resets current speed based on normal speed value
-  void ResetSpeed() {
-    if(isSlowedDown) {
-      // reset speed
-      isSlowedDown = false;
-      currentSpeed = settings.normalSpeed;
-    }
-  }
 
 // =============================================================================
 // =============== Target tile methods =========================================
@@ -446,21 +431,17 @@ public class Ghost : MonoBehaviour
      *  • frightened - scatter
      * Reference: The Pacman Dosier - Gamasutra
      */
-    if(currentGhostMode != GhostMode.FRIGHTENED) {
+
+    if(currentGhostMode == GhostMode.FRIGHTENED) {
+      // current mode is frightened, new mode not --> animation back to normal
+      animator.runtimeAnimatorController = regularAnimatorController;
+    } else {
       if(newGhostMode == GhostMode.FRIGHTENED) {
         // switch to scared animation controller
         animator.runtimeAnimatorController = scaredAnimatorController;
       }
-      SwitchDirection(ref currentMove);
-    } else {
-      // current mode is frightened, new mode not --> animation back to normal
-      animator.runtimeAnimatorController = regularAnimatorController;
+        SwitchDirection(ref currentMove);
     }
-
-
-
-
-
     // cache the new ghost mode
     currentGhostMode = newGhostMode;
 
