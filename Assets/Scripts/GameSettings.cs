@@ -11,15 +11,20 @@ namespace PM {
   public struct MazeSettings {
     public int width;
     public int height;
-    public string imgPathMultiBg;
-    public string imgPathGhostHouse;
+    public string imgMazePath;
+    public string imgMazeGhostZones;
+    public string imgMazePellets;
+    public string imgGhostHouseTiles;
 
-    public MazeSettings(string imgPathMultiBg, string imgPathGhostHouse)
+    public MazeSettings(string imgMazePath, string imgMazeGhostZones,
+      string imgMazePellets, string imgGhostHouseTiles)
     {
       width = 32;
       height = 35;
-      this.imgPathMultiBg = imgPathMultiBg;
-      this.imgPathGhostHouse = imgPathGhostHouse;
+      this.imgMazePath = imgMazePath;
+      this.imgMazeGhostZones = imgMazeGhostZones;
+      this.imgMazePellets = imgMazePellets;
+      this.imgGhostHouseTiles = imgGhostHouseTiles;
     }
   }
 
@@ -124,8 +129,11 @@ namespace PM {
     public static MazeSettings GetMazeSettings()
     {
       return new MazeSettings(
-        "Assets/Images/Maze-maps/Default/pacman-bg-multi.png",
-        "Assets/Images/Maze-maps/Default/pacman-bg-ghost-house.png");
+        "Assets/Images/Maze-maps/Default/maze-paths.png",
+        "Assets/Images/Maze-maps/Default/maze-ghost-zones.png",
+        "Assets/Images/Maze-maps/Default/maze-pellets.png",
+        "Assets/Images/Maze-maps/Default/maze-ghost-house-wall-tiles.png"
+      );
     }
 
     public static Vector2Int[] GetEnergizerPositions()
@@ -212,6 +220,7 @@ namespace PM {
         "clyde"
       )};
   }
-
   }
+
+
 }

@@ -105,20 +105,14 @@ public static class GameFactory {
     for(int j = maze.borderSize; j < maze.height - maze.borderSize; j++) {
       for(int i = maze.borderSize; i < maze.width - maze.borderSize; i++) {
         Vector2Int tile = new Vector2Int(i, j);
-        if(maze.TileContainsPellet(tile)) {
+        // check if the pellet is an energizer or not
+        bool placePellet = maze.TileContainsPellet(tile);
+        bool placeEnergizer = maze.TileContainsEnergizer(tile);
+        if(placePellet || placeEnergizer) {
           GameObject pelletGO = InstantiatePrefab(resourcePath, "pellet");
           pelletGO.transform.position = maze.GetCenterPos(tile);
           Pellet pellet = pelletGO.GetComponent<Pellet>();
-          // check if the pellet is an energizer or not
-          bool isEnergizer = false;
-          // TODO replace with Set data structure!
-          for(int p = 0; p < energizerPositions.Length; p++) {
-            if(tile == energizerPositions[p]){
-              Debug.Log("Energizer at tile: " + tile);
-              isEnergizer = true;
-            }
-          }
-          pellet.Initialize(isEnergizer, score);
+          pellet.Initialize(placeEnergizer, score);
           pellet.transform.SetParent(pelletsParent.transform);
           pellets[i, j] = pellet;
         }

@@ -18,13 +18,12 @@ namespace PM {
     public int height {get; private set;}
     // TODO - fix this to not hardcoded
     public int borderSize {get; private set;} = 2;
-    private string imgPathMultiBg;
-    private string imgPathGhostHouse;
 
-    // MazeTileTypes instances to keep track of the type of tiles at
-    // given position
-    private MazeTileTypes mazeTileTypes;
-    private MazeTileTypes ghostHouseTileTypes;
+    // maze tile types - paths, ghost zones, pellets, ghosthouse rule tiles
+    private MazeTileTypes pathsTileTypes;
+    private MazeTileTypes ghostZonesTileTypes;
+    private MazeTileTypes pelletsTileTypes;
+    private MazeTileTypes ghosthouseTileTypes;
 
     // TODO - replace met standard directions unity?
     public readonly Vector2Int[] directions = {
@@ -58,8 +57,7 @@ namespace PM {
       Debug.Log("MAZE - INITIALIZE");
       width = settings.width;
       height = settings.height;
-      imgPathMultiBg = settings.imgPathMultiBg;
-      imgPathGhostHouse = settings.imgPathGhostHouse;
+
 
       // factors used for the process of snapping the position to a pixel
       pixelateFactor = (float) numPixelsPerTile;
@@ -75,13 +73,19 @@ namespace PM {
       };
 
       // create MazeTileTypes - models that hold the maze tile types
-      mazeTileTypes = new MazeTileTypes(imgPathMultiBg, width, height);
-      ghostHouseTileTypes = new MazeTileTypes(imgPathGhostHouse, width, height);
+      pathsTileTypes = new MazeTileTypes(settings.imgMazePath, width, height);
+      ghostZonesTileTypes = new MazeTileTypes(settings.imgMazeGhostZones, width, height);
+      pelletsTileTypes = new MazeTileTypes(settings.imgMazePellets, width, height);
+      ghosthouseTileTypes = new MazeTileTypes(settings.imgGhostHouseTiles, width, height);
 
+
+      ghosthouseTileTypes.LogTiles(14, 16, 20, 18);
       // draw the tiles to the tilemap, according to the tiletype models
-      // TODO - ref not necessary, already pased by reference right?
-      DrawTiles(mazeTileTypes);
-      DrawTiles(ghostHouseTileTypes);
+      //DrawTiles(pathsTileTypes);
+    //  DrawTiles(ghosthouseTileTypes);
+      DrawTiles(pathsTileTypes);
+      DrawTiles(ghosthouseTileTypes);
+      DrawTiles(ghostZonesTileTypes);
     }
 
     public void Awake()
@@ -149,9 +153,9 @@ namespace PM {
     }
 
 
-  // ==============================================================================
-  // =============== tile and direction utility methods ========================-
-  // ==============================================================================
+// ==============================================================================
+// =============== tile and direction utility methods ========================-
+// ==============================================================================
     // returns the to the currentTile adjacent tile based on the th
     public Vector2Int GetAdjacentTile(Vector2Int currentTile, Dir dir) {
       // NOTE: currentTile is a copy, not a reference to the passed Coordinate
@@ -222,53 +226,55 @@ namespace PM {
 
 
     public bool TileContainsPellet(Vector2Int tile){
-      return TileIsPath(tile) && !TileIsGhostHouse(tile)
-        && !TileIsTunnel(tile);
+        return pelletsTileTypes.GetTileID(tile) == MazeTileTypes.TileID.PELLET;
+    }
+
+    public bool TileContainsEnergizer(Vector2Int tile){
+      return pelletsTileTypes.GetTileID(tile) == MazeTileTypes.TileID.ENERGIZER;
     }
 
     public bool TileIsPath(Vector2Int tile)
     {
-      // WrapTile(ref tile);
-      return mazeTileTypes.TileIsPath(tile);
+      return pathsTileTypes.GetTileID(tile) == MazeTileTypes.TileID.PATH;
     }
 
-    public bool TileIsGhostHouse(Vector2Int tile)
+/*    public bool TileIsGhostHouse(Vector2Int tile)
     {
-      // WrapTile(ref tile);
       return ghostHouseTileTypes.GetTileID(tile)
         == MazeTileTypes.TileID.GhostHouse;
     }
-
+*/
 
     public bool TileGhostNoUpward(Vector2Int tile)
     {
-      // WrapTile(ref tile);
-      MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
-      return tileID == MazeTileTypes.TileID.NoUpward;
+      return ghostZonesTileTypes.GetTileID(tile) == MazeTileTypes.TileID.NO_UPWARD;
     }
 
     public bool TileIsGhostDoor(Vector2Int tile)
     {
-      // WrapTile(ref tile);
-      MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
-      return tileID == MazeTileTypes.TileID.GhostDoor;
+      return ghostZonesTileTypes.GetTileID(tile) == MazeTileTypes.TileID.GHOST_DOOR;
     }
 
     public bool TileIsTeleport(Vector2Int tile)
     {
-      MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
-      return tileID == MazeTileTypes.TileID.Teleport;
+      if(TileIsPath(tile)) {
+        if(tile.x == 0) {
+          return TileIsPath(new Vector2Int(width - 1, tile.y));
+        } else if(tile.x == (width - 1)) {
+          return TileIsPath(new Vector2Int(0, tile.y));
+        }
+      }
+      return false;
     }
 
     public bool TileIsTunnel(Vector2Int tile)
     {
-      MazeTileTypes.TileID tileID = mazeTileTypes.GetTileID(tile);
-      return tileID == MazeTileTypes.TileID.Tunnel;
+      return ghostZonesTileTypes.GetTileID(tile) == MazeTileTypes.TileID.TUNNEL;
     }
 
-    public MazeTileTypes.TileID GetTileType(Vector2Int tile) {
+/*    public MazeTileTypes.TileID GetTileType(Vector2Int tile) {
       return mazeTileTypes.GetTileID(tile);
-    }
+    }*/
 
   // ==============================================================================
   // =============== dinstance utility methods ===================================
@@ -293,8 +299,9 @@ namespace PM {
   // ==============================================================================
 
 
-    private void DrawTiles(MazeTileTypes tileTypes)
+  /*  private void DrawTiles(MazeTileTypes tileTypes)
     {
+      Debug.Log("******** DRAW TILE TYPES IS CALLED **********");
       // also draw a border with rule tiles, to ensure correct display of border
       int size = width * height;
       for(int i = 0; i < size; i++) {
@@ -303,16 +310,18 @@ namespace PM {
         tileCoord.x = i - (tileCoord.y * width); // * is cheaper than %
         Vector3Int pos = new Vector3Int(tileCoord.x, tileCoord.y, 0);
         // if tile coordinate is wall - add wall tile
-        if(!tileTypes.TileIsPath(tileCoord)) {
+
+        MazeTileTypes.TileID tileID = tileTypes.GetTileID(tileCoord);
+        if(tileID != MazeTileTypes.TileID.PATH) {
           // place the corresponding wall tile
-          switch(tileTypes.GetTileID(tileCoord)) {
-            case MazeTileTypes.TileID.RegWall:
+          switch(tileID) {
+            case MazeTileTypes.TileID.WALL:
               tilemapWalls.SetTile(pos, ruleTileRegWall);
               break;
-            case MazeTileTypes.TileID.GhostHouse:
+            case MazeTileTypes.TileID.GHOST_HOUSE_WALL_TILES:
               tilemapWalls.SetTile(pos, ruleTileGhostHouse);
               break;
-            case MazeTileTypes.TileID.GhostDoor:
+            case MazeTileTypes.TileID.GHOST_DOOR:
               // TODO - position the door based on a seperate image,
               //        so you can take the orientation into account
               tilemapGhostDoor.SetTile(pos, ruleTileGhostDoor);
@@ -323,7 +332,44 @@ namespace PM {
           }
         }
       }
+    }*/
+
+
+    private void DrawTiles(MazeTileTypes tileTypes)
+    {
+      for(int j = 0; j < height; j++) {
+        for(int i = 0; i < width; i++) {
+          Vector2Int tile = new Vector2Int(i, j);
+          MazeTileTypes.TileID tileID = tileTypes.GetTileID(tile);
+          switch(tileID) {
+            case MazeTileTypes.TileID.WALL:
+              tilemapWalls.SetTile(new Vector3Int(tile.x, tile.y, 0), ruleTileRegWall);
+              break;
+            case MazeTileTypes.TileID.GHOST_HOUSE_WALL_TILE:
+              tilemapWalls.SetTile(new Vector3Int(tile.x, tile.y, 0), ruleTileGhostHouse);
+              break;
+            case MazeTileTypes.TileID.GHOST_DOOR:
+              // TODO - position the door based on a seperate image,
+              //        so you can take the orientation into account
+              tilemapGhostDoor.SetTile(new Vector3Int(tile.x, tile.y, 0), ruleTileGhostDoor);
+              break;
+            default:
+              // default - do nothing
+              break;
+          }
+        }
+      }
     }
+    //
+    // private void DrawGhostHouseWalls(MazeTileTypes tileTypes)
+    // {
+    //
+    // }
+    //
+    // private void DrawGhostDoor(MazeTileTypes tileTypes)
+    // {
+    //
+    // }
 
 
   }

@@ -252,22 +252,13 @@ public class Ghost : MonoBehaviour
 
   // processes the current tile type if necessary
   void ProcessCurrentTileType() {
-    MazeTileTypes.TileID tileID = maze.GetTileType(currentTile);
-
-    switch(tileID) {
-      case MazeTileTypes.TileID.Teleport: {
-        Teleport();
-        break;
-      } // end case teleport
-      case MazeTileTypes.TileID.Tunnel: {
-        SlowDownSpeed();
-        break;
-      } // end case tunnel
-      default: {
-        ResetSpeed();
-        break;
-      } // end default case
-    } // end switch tileID
+    if(maze.TileIsTeleport(currentTile)){
+      Teleport();
+    } else if (maze.TileIsTunnel(currentTile)) {
+      SlowDownSpeed();
+    } else {
+      ResetSpeed();
+    }
   }
 
   // teleports the gost to the otherside

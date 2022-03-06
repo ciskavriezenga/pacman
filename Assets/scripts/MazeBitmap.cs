@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// TEMP CLASS - to turn of the maze bitmap
 namespace PM {
   public class MazeBitmap : MonoBehaviour
   {
@@ -10,12 +11,6 @@ namespace PM {
       {
         SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.enabled = false;
-      }
-
-      // Update is called once per frame
-      void Update()
-      {
-
       }
   }
 }
