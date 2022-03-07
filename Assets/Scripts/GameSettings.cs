@@ -17,7 +17,6 @@ public static class GameSettings {
 
   public static PacmanSettings GetPacmanSettings()
   {
-
     return new PacmanSettings(
     // speed: overall speed, percentages: norm, normDot, fright, frightDot
     overallSpeed, 0.8f, 0.71f, 0.9f, 0.79f,
@@ -103,9 +102,9 @@ public static class GameSettings {
       // Inky
       new GhostSettings (
         // position and direction
-        new Vector2(27f, 3.5f),          // start pos
-        Dir.LEFT,                  // start direction
-        false,                    // start In Ghosthouse
+        new Vector2(13.875f, 18.5f),          // start pos
+        Dir.UP,                  // start direction
+        true,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields

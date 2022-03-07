@@ -1,6 +1,6 @@
 #define SHOW_GHOST_TARGET_TILE
-#define DEBUG_GHOST
-
+#define DEBUG_GHOSTMODE
+//#define DEBUG_MOVEMENT
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -139,6 +139,7 @@ public class Ghost : MonoBehaviour
 
     float distanceToTarget = CalcDistanceMoveAxis();
     float moveDistance = curSpeed;
+#if DEBUG_MOVEMENT
     if(name == "blinky") {
       Debug.Log("curPos: " + curPos
       + " distanceToTarget: " + distanceToTarget
@@ -147,35 +148,49 @@ public class Ghost : MonoBehaviour
       + " curMove.dir: " + curMove.dir
       );
     }
+#endif
 
     if(distanceToTarget < moveDistance) {
       // we will either reached center new movement axis or target
       if(curDir == curMove.dir) {
         Move(distanceToTarget);
         moveDistance -= distanceToTarget;
+#if DEBUG_MOVEMENT
         if(name == "blinky") {
           Debug.Log("REACHED TARGET");
         }
+#endif
         // reached target tile
+        curTile = curMove.tile;
+        // TODO - take difference in speed and leftover movement into account?
+        ProcessCurrentTileType();
         curMove = nextMove;
         nextMove = GenerateMove(curMove.tile, curMove.dir);
+        // in case opposite --> immediately change direction
+        if(curMove.dir == oppositeDirs[(int) curDir]){
+          curDir = curMove.dir;
+          animator.SetInteger("direction", (int) curDir);
+        }
       } else {
+#if DEBUG_MOVEMENT
         if(name == "blinky") {
           Debug.Log("REACHED CENTER");
         }
+#endif
         Move(distanceToTarget);
         moveDistance -= distanceToTarget;
         // we reached the center for the new move direction --> new direction
         curDir = curMove.dir;
         // update animation direction
-        animator.SetInteger("direction", (int) curMove.dir);
+        animator.SetInteger("direction", (int) curDir);
       }
     }
-
+    // either move full step or leftover distance
     Move(moveDistance);
   }
 
   void Move(float displacement) {
+    // move the displacement amount into the current direction
     switch(curDir) {
       case Dir.RIGHT:
         curPos.x += displacement;
@@ -190,11 +205,13 @@ public class Ghost : MonoBehaviour
         curPos.y += displacement;
         break;
     }
+    // update GameObject position
     transform.position = curPos;
   }
 
 
   float CalcDistanceMoveAxis() {
+    // calculate the distance tot the target position on current movement axis
     switch(curDir) {
       case Dir.RIGHT:
         return curMove.pos.x - curPos.x;
@@ -211,28 +228,34 @@ public class Ghost : MonoBehaviour
 // = Generate moves methods ====================================================
 // =============================================================================
 
-  void RegenerateMoves(Vector2Int fromTile, Dir direction, int numMoves)
-  {
-    // for(int i = 0; i < numMoves; i++) {
-    //   // cache lastMove generated
-    //   GhostMove move = GenerateMove(fromTile, direction);
-    //   moves.Enqueue(move);
-    //   fromTile = move.targetTile;
-    //   direction = move.dir;
-    // }
-  }
-
   GhostMove GenerateMove(Vector2Int fromTile, Dir direction)
   {
+    // return the tile that corresponds to the cur mode
+    Vector2Int targetTile = Vector2Int.zero;
     switch(curGhostMode) {
-      case GhostMode.PACING_HOME:
-        return GeneratePacingHomeMove(fromTile, direction);
-      case GhostMode.LEAVING_HOME:
+      case GhostMode.CHASE:
+        targetTile = GetChaseTargetTile();
+        break;
+      case GhostMode.SCATTER:
+        targetTile = settings.scatterTile;
         break;
       case GhostMode.FRIGHTENED:
         return GenerateFrightenedMove(fromTile, direction);
+      case GhostMode.PACING_HOME:
+        return GeneratePacingHomeMove(fromTile, direction);
+      case GhostMode.LEAVING_HOME:
+        targetTile = maze.ghostDoorTargetTile;
+        Debug.Log("LEAVING_HOME - targetTile: " + targetTile);
+        if(curTile == targetTile) {
+          curGhostMode = gameManager.curGhostMode;
+          return GenerateMove(fromTile, direction);
+        }
+        break;
     }
-    return CreateChaseScatterMove(fromTile, direction);
+    #if SHOW_GHOST_TARGET_TILE
+        targetTileSR.transform.position = maze.GetCenterPos(targetTile);
+    #endif
+    return CreateTargetedMove(fromTile, direction, targetTile);
   }
 
   private GhostMove GeneratePacingHomeMove(Vector2Int fromTile, Dir direction)
@@ -253,10 +276,8 @@ public class Ghost : MonoBehaviour
     targetTileSR.transform.position = maze.GetCenterPos(targetTile);
 #endif
     // add 3 pixels horizontal offset so ghost appears at correct spot
-    // TODO fix hard code
-    Vector2 targetPos = maze.GetMoveToPos(targetTile, direction);
-    targetPos.x += 0.375f;
-    return new GhostMove(targetTile, direction, maze.PixelCoordinate(targetPos), targetPos);
+    // NOTE - hardcoded - only horizontal doors now
+    return CreateGhostMove(targetTile, direction, 0.375f);
   }
 
   private GhostMove GenerateFrightenedMove(Vector2Int fromTile, Dir direction)
@@ -282,28 +303,15 @@ public class Ghost : MonoBehaviour
 #if SHOW_GHOST_TARGET_TILE
     targetTileSR.transform.position = maze.GetCenterPos(randomTile);
 #endif
-    Vector2 targetPos = maze.GetMoveToPos(randomTile, dir);
-    return new GhostMove(randomTile, dir, maze.PixelCoordinate(targetPos), targetPos);
+    return CreateGhostMove(randomTile, dir);
   }
 
-  private GhostMove CreateChaseScatterMove(Vector2Int fromTile, Dir direction)
+  private GhostMove CreateTargetedMove(Vector2Int fromTile, Dir direction, Vector2Int targetTile)
   {
-
     // retrieve adjacentTiles
     Dir[] directions = allowedDirs[(int) direction];
     Vector2Int[] adjacentTiles = GetAdjacentTiles(fromTile, directions);
 
-    // return the tile that corresponds to the cur mode
-    Vector2Int targetTile;
-    if(curGhostMode == GhostMode.CHASE) {
-      targetTile = GetChaseTargetTile();
-    } else {
-      targetTile = settings.scatterTile;
-    }
-
-#if SHOW_GHOST_TARGET_TILE
-    targetTileSR.transform.position = maze.GetCenterPos(targetTile);
-#endif
     // find the best move, most near to target tile
     int indexBestMove = -1;
     int smallestDistance = int.MaxValue;
@@ -321,22 +329,23 @@ public class Ghost : MonoBehaviour
         }
       }
     } // end forloop
-    // create a new Move struct
-    // NOTE: corresponding pixels are calculated in Move constructor
-    if(indexBestMove == -1) {
-      if(maze.TileIsGhostHouse(fromTile)) {
-        Debug.Log("***** TODO ***** ");
-          // swap direction
-          //SwitchDirection(ref direction);
-          //return CreateChaseScatterMove(fromTile, direction);
-      } else {
-        Debug.Log("***** SHOULD NOT HAPPEN");
-      }
-    }
+
     // return new GhostMove
-    Vector2Int tile = adjacentTiles[indexBestMove];
-    Dir dir = directions[indexBestMove];
+    float offsetX = 0;
+    // add offset if ghost is leaving home
+    if(curGhostMode == GhostMode.LEAVING_HOME) {
+      // NOTE - currently hardcoded - no vertical doors possible
+      offsetX  = 0.375f;
+    }
+    return CreateGhostMove(adjacentTiles[indexBestMove], directions[indexBestMove], offsetX);
+  }
+
+  GhostMove CreateGhostMove(Vector2Int tile, Dir dir, float offsetX = 0) {
+    // retrieve targetPos
     Vector2 targetPos = maze.GetMoveToPos(tile, dir);
+    // add offset
+    if(offsetX > 0.01 | offsetX < -0.01) targetPos.x += offsetX;
+    // create new ghostmove
     return new GhostMove(tile, dir, maze.PixelCoordinate(targetPos), targetPos);
   }
 
@@ -391,14 +400,13 @@ public class Ghost : MonoBehaviour
     curPos.x += deltaX;
     transform.position = curPos;
 
-    // TODO - fix this
-    Debug.Log("FIX ME PLEASE!!!! ");
+    curMove = GenerateMove(curTile, curMove.dir);
+    nextMove = GenerateMove(curMove.tile, curMove.dir);
   }
 
 // =============================================================================
 // = Target tile methods =======================================================
 // =============================================================================
-
 
   Vector2Int GetChaseTargetTile()
   {
@@ -451,47 +459,61 @@ public class Ghost : MonoBehaviour
 // = Switch mode & direction ===================================================
 // =============================================================================
   public void SwitchMode(GhostMode newGhostMode) {
+#if DEBUG_GHOSTMODE
+    if(name == "blinky") {
+      Debug.Log("Ghost.SwitchMode - currentMode: " + curGhostMode
+      + ", new mode: " + newGhostMode );
+    }
+#endif
     // do nothing if new mode equals cur
     if(newGhostMode == curGhostMode) {
       return;
     }
 
-#if DEBUG_GHOST
-    Debug.Log("*** Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
-#endif
-
-    // direction for the new Move
-    Dir dirNewMove = curMove.dir;
     // Do NOT change mode if the ghost is waiting in the ghosthouse
     if(curGhostMode != GhostMode.PACING_HOME
       && curGhostMode != GhostMode.LEAVING_HOME) {
+
+      GhostMode fromGhostMode = curGhostMode;
+      curGhostMode = newGhostMode;
       // Ghosts do not reverse direction when leaving frigthened mode
-      if(curGhostMode == GhostMode.FRIGHTENED) {
+      if(fromGhostMode == GhostMode.FRIGHTENED) {
         // cur mode is frightened, new mode not --> animation back to normal
         animator.runtimeAnimatorController = regularAnimatorController;
+        // fetch new next move
+        nextMove = GenerateMove(curMove.tile, curMove.dir);
       } else {
         if(newGhostMode == GhostMode.FRIGHTENED) {
           // switch to scared animation controller
           animator.runtimeAnimatorController = scaredAnimatorController;
         }
-        // switch direction for the new move if current mode !=- frightened
-        SwitchDirection(ref dirNewMove);
+        Dir newDir = oppositeDirs[(int) curMove.dir];
+        // fetch new next move
+        Vector2Int tile = maze.GetAdjacentTile(curMove.tile, newDir);
+        nextMove = CreateGhostMove(tile, newDir);
       }
-      // cache the new ghost mode
-      curGhostMode = newGhostMode;
 
-      // only generate 1 move, because we can still use the current move
-      // depending on the current amount of moves - generate new num of moves
-      Debug.Log("FIX ME FIX ME");
+#if DEBUG_GHOSTMODE
+      if(name == "blinky") {
+        Debug.Log("Ghost.SwitchMode - new mode: " + newGhostMode + " ***");
+        Debug.Log(".................. curMove.dir: " + curMove.dir
+        + ", nextMove.dir: " + nextMove.dir);
+        Debug.Log(".................. curMove.tile: " + curMove.tile
+        + ", nextMove.tile: " + nextMove.tile);
+      }
+#endif
+
     }
   }
-
-  void SwitchDirection(ref Dir dir)
-  {
-    dir = oppositeDirs[(int) dir];
+  public void LeaveHome() {
+    // be sure the current mode is pacing home
+    if(curGhostMode == GhostMode.PACING_HOME) {
+      curGhostMode = GhostMode.LEAVING_HOME;
+    } else {
+      Debug.Log(" **** ERROR ***** - this should not happen - Ghost.LeaveHome - name: "
+      + name);
+    }
   }
-
-
 // =============================================================================
 // = setters & getter ==========================================================
 // =============================================================================
@@ -510,10 +532,6 @@ public class Ghost : MonoBehaviour
     this.scatterTileSR = scatterTileSR;
   }
 #endif
-
-  void SetSpeed(float speed) {
-
-  }
 
   public Vector2Int GetCurTile() { return curTile;}
 

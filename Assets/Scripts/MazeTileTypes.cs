@@ -17,7 +17,6 @@ namespace PM {
  * 5  yellow =   255,  255,  0
  * 6  cyan =     0,    255,  255
  * 7  magenta =  255,  0,    255
- * 8  gray =     125,  125,  125
  */
 
 
@@ -90,6 +89,12 @@ namespace PM {
     }
 
     // returns the tileID at the given tile coordinate
+    public TileID GetTileID(int x, int y)
+    {
+      return tileIDs[x + (y * width)];
+    }
+
+    // returns the tileID at the given tile coordinate
     public TileID GetTileID(int index)
     {
       return tileIDs[index];
@@ -106,6 +111,29 @@ namespace PM {
       return TileID.NONE; // default ID
     }
 
+    public Vector2Int GetGhostDoorTargetTile()
+    {
+      //List<Vector2Int> doorTiles = new List<Vector2Int>();
+      int numTiles = 0;
+      Vector2Int sumTiles = Vector2Int.zero;
+      // add all door tiles to the list
+      for(int j = 0; j < height; j++) {
+        for(int i = 0; i < width ; i++) {
+          if(GetTileID(i, j) == TileID.GHOST_DOOR) {
+            sumTiles.x += i;
+            sumTiles.y += j;
+            numTiles++;
+        //    doorTiles.Add(new Vector2Int(i, j));
+          }
+        }
+      }
+      // return average position
+      Vector2Int avgTiles = Vector2Int.zero;
+      if(numTiles > 0) {
+        avgTiles = sumTiles / numTiles;
+      }
+      return avgTiles;
+    }
 
 // =============================================================================
 // =============== DEBUG methods ===============================================

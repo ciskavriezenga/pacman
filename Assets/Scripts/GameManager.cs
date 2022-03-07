@@ -140,6 +140,10 @@ public class GameManager : MonoBehaviour
     for(int i = 0; i < ghosts.Length; i++) {
       ghosts[i].SwitchMode(curGhostMode);
     }
+    // TEMP FIXME
+    if(curGhostMode == GhostMode.CHASE) {
+      ghosts[1].LeaveHome();
+    }
 #endif
   }
 

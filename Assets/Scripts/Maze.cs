@@ -35,6 +35,7 @@ public class Maze : MonoBehaviour
   private MazeTileTypes ghostZonesTileTypes;
   private MazeTileTypes pelletsTileTypes;
   private MazeTileTypes ghosthouseTileTypes;
+  public Vector2Int ghostDoorTargetTile {get; private set;}
 
   // TODO - replace met standard directions unity?
   public readonly Vector2Int[] directions = {
@@ -79,7 +80,9 @@ public class Maze : MonoBehaviour
     pelletsTileTypes = new MazeTileTypes(settings.imgMazePellets, width, height);
     ghosthouseTileTypes = new MazeTileTypes(settings.imgGhostHouseTiles, width, height);
 
-
+    // TODO - fetch door as vector2 - store as vector2int + get offset.
+    ghostDoorTargetTile = ghostZonesTileTypes.GetGhostDoorTargetTile();
+    Debug.Log("Maze.Initialize - ghostDoorTargetTile " + ghostDoorTargetTile);
     // draw the tiles to the tilemap, according to the tiletype models
     DrawTiles(pathsTileTypes);
     DrawTiles(ghosthouseTileTypes);
@@ -302,7 +305,5 @@ public class Maze : MonoBehaviour
       }
     }
   }
-
-
 }
 }
