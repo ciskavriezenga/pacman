@@ -4,14 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace PM {
-public enum GhostMode
-{
-  CHASE = 0,
-  SCATTER = 1,
-  FRIGHTENED = 2,
-  PACING_HOME = 3,
-  LEAVING_HOUSE = 4
-}
 
 public class GameManager : MonoBehaviour
 {
@@ -28,10 +20,10 @@ public class GameManager : MonoBehaviour
   // ----------- ghost mode fields -----------
   // array with ghost intervals, containing countdown time and ghost mode
   private GhostModeInterval[] ghostModeIntervals;
-  // current ghost mode interval index
+  // cur ghost mode interval index
   private int gModeIntervalIndex;
-  // current ghost mode
-  [SerializeField] public GhostMode currentGhostMode { get; private set; }
+  // cur ghost mode
+  [SerializeField] public GhostMode curGhostMode { get; private set; }
 
   // countdown time of the scatter chase timer
   [SerializeField] public float scatterChaseTime { get; private set; }
@@ -51,6 +43,9 @@ public class GameManager : MonoBehaviour
     // initialize the random number generator with a seed
     Random.InitState(0);
 
+    // retrieve the ghostModeIntervals to manage countdown times and ghostmodes
+    ghostModeIntervals = GameSettings.GetGhostModeIntervals();
+    curGhostMode = GhostMode.CHASE;
     // create and instantiate the Maze GameObject
     maze = GameFactory.InstantiatePrefab("Prefabs/Maze", "maze").GetComponent<Maze>();
     maze.Initialize(GameSettings.GetMazeSettings());
@@ -70,8 +65,7 @@ public class GameManager : MonoBehaviour
     ghosts = GameFactory.InstantiateGhosts(GameSettings.GetGhostSettings(), this);
 #endif
 
-    // retrieve the ghostModeIntervals to manage countdown times and ghostmodes
-    ghostModeIntervals = GameSettings.GetGhostModeIntervals();
+
   }
 
 
@@ -86,7 +80,7 @@ public class GameManager : MonoBehaviour
   // Update is called once per frame
   private void Update()
   {
-    if(currentGhostMode == GhostMode.FRIGHTENED){
+    if(curGhostMode == GhostMode.FRIGHTENED){
       frightenedTime -= Time.deltaTime;
       if(frightenedTime <= 0) {
         UpdateGhostMode(ghostModeIntervals[gModeIntervalIndex].mode);
@@ -118,7 +112,7 @@ public class GameManager : MonoBehaviour
   {
     // increment ghost mode interval index
     gModeIntervalIndex++;
-    // update ghosts  current index
+    // update ghosts  cur index
     UpdateGhostModeInterval();
   }
 
@@ -126,25 +120,25 @@ public class GameManager : MonoBehaviour
   {
     // reset ghost mode interval index to first interval
     gModeIntervalIndex = 0;
-    // update ghosts  current index
+    // update ghosts  cur index
     UpdateGhostModeInterval();
   }
 
   private void UpdateGhostModeInterval()
   {
-    // reset the timer to the interval of the current ghost mode
+    // reset the timer to the interval of the cur ghost mode
     scatterChaseTime = ghostModeIntervals[gModeIntervalIndex].interval;
     UpdateGhostMode(ghostModeIntervals[gModeIntervalIndex].mode);
   }
 
   private void UpdateGhostMode(GhostMode mode) {
-    // cache the current ghost mode
-    currentGhostMode = mode;
+    // cache the cur ghost mode
+    curGhostMode = mode;
     // update the ghostmode for each ghost
 #if !NO_GHOSTS
-    Debug.Log("GameManager-UpdateGhostMode - New ghostmode: " + currentGhostMode);
+    Debug.Log("GameManager-UpdateGhostMode - New ghostmode: " + curGhostMode);
     for(int i = 0; i < ghosts.Length; i++) {
-      ghosts[i].SwitchMode(currentGhostMode);
+      ghosts[i].SwitchMode(curGhostMode);
     }
 #endif
   }
@@ -166,18 +160,18 @@ public class GameManager : MonoBehaviour
 // =============== getters  ====================================================
 // =============================================================================
 
-  public bool PathIsEmpty(Vector2Int tile) {
-    for(int i = 0; i < ghosts.Length; i++) {
-      if(ghosts[i].GetCurrentTile() == tile) return false;
-    }
-    if(pacman.GetCurrentTile() == tile) return false;
-    return true;
-  }
+  // public bool PathIsEmpty(Vector2Int tile) {
+  //   for(int i = 0; i < ghosts.Length; i++) {
+  //     if(ghosts[i].GetCurTile() == tile) return false;
+  //   }
+  //   if(pacman.GetCurTile() == tile) return false;
+  //   return true;
+  // }
 
 
   public bool GameModeIsFrightened ()
   {
-    return currentGhostMode == GhostMode.FRIGHTENED;
+    return curGhostMode == GhostMode.FRIGHTENED;
   }
   public Maze GetMaze() {
     return maze;

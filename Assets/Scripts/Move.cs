@@ -3,59 +3,144 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace PM {
-  public struct Move {
-    public Vector2Int tile { get; private set; }
-    public Dir direction;
-    private Vector2Int[] pixels;
-    private int pixelIndex;
 
-    public enum MoveTypes {
-      GhostRegular = 0,
-      GhostTeleport = 1,
-      PacmanRegular = 2,
-      PacmanTeleport = 3
-    };
+// =============================================================================
+// =============== GhostMove ===================================================
+// =============================================================================
+public struct GhostMove {
+  public Vector2Int targetTile { get; private set; }
+  public Dir dir { get; private set; }  
+  public Vector2Int targetPixelPos { get; private set; }
+  public Vector2 targetPos { get; private set; }
 
-    // TODO - remove ref
-    public Move(Vector2Int tile, Dir direction, Maze maze) {
-      this.tile = tile;
-      this.direction = direction;
-      pixelIndex = 0;
-      // fetch the pixel locations for this move
-      Vector2 edgePosition = maze.GetMoveToPos(tile, direction);
-      Vector2 centerPosition = maze.GetCenterPos(tile);
-      pixels = new Vector2Int[]{
-        maze.PixelCoordinate(edgePosition),
-        maze.PixelCoordinate(centerPosition)
-      };
-    }
-
-    public Vector2Int GetPixelMove()
-    {
-      return pixels[pixelIndex];
-    }
-
-    public bool NextPixel() {
-      // change pixel index to second pixel, if current index is 0
-      if(pixelIndex == 0 ) {
-        pixelIndex = 1;
-        return true;
-      }
-      return false; // no next pixel
-    }
-
-    public Vector2Int GetCenterPixel()
-    {
-      // index 1 contains the center pixel coordinate
-      return pixels[1];
-    }
-
-    public void Log() {
-      Debug.Log("Ghostmove-Tile: " + tile
-        + ", direction: " + direction
-        + ", pixelIndex: " + pixelIndex
-        + ", pixels[0]: " + pixels[0]
-        + ", pixels[1]: " + pixels[1]);
-    }
+  public GhostMove(Vector2Int targetTile, Dir dir,
+    Vector2Int targetPixelPos, Vector2 targetPos) {
+    this.targetTile = targetTile;
+    this.dir = dir;
+    this.targetPixelPos = targetPixelPos;
+    this.targetPos = targetPos;
   }
+}
+
+// =============================================================================
+// =============== GhostModeInterval ===========================================
+// =============================================================================
+public struct GhostModeInterval {
+  public GhostMode mode {get; private set;}
+  public int interval {get; private set;}
+
+  public GhostModeInterval(GhostMode mode, int interval)
+  {
+    this.mode = mode;
+    this.interval = interval;
+  }
+}
+
+// =============================================================================
+// =============== MazeSettings ================================================
+// =============================================================================
+public struct MazeSettings {
+  public int width;
+  public int height;
+  public string imgMazePath;
+  public string imgMazeGhostZones;
+  public string imgMazePellets;
+  public string imgGhostHouseTiles;
+
+  public MazeSettings(string imgMazePath, string imgMazeGhostZones,
+    string imgMazePellets, string imgGhostHouseTiles)
+  {
+    width = 32;
+    height = 35;
+    this.imgMazePath = imgMazePath;
+    this.imgMazeGhostZones = imgMazeGhostZones;
+    this.imgMazePellets = imgMazePellets;
+    this.imgGhostHouseTiles = imgGhostHouseTiles;
+  }
+}
+
+// =============================================================================
+// =============== PacmanSettings ==============================================
+// =============================================================================
+public struct PacmanSettings {
+  // speed
+  public float normSpeed;
+  public float normDotSpeed;
+  public float frightSpeed;
+  public float frightDotSpeed;
+  // position and direction
+  public Vector2 startPos;
+  public Dir startDirection;
+  // info
+  public string settingsName;
+
+  public PacmanSettings(
+    float overallSpeed,
+    float normSpeedPerc, float normDotSpeedPerc,
+    float frightSpeedPerc, float frightDotSpeedPerc,
+    Vector2 startPos, Dir startDirection,
+    string settingsName)
+  {
+    // speed
+    normSpeed = overallSpeed * normSpeedPerc;
+    normDotSpeed = overallSpeed * normDotSpeedPerc;
+    frightSpeed = overallSpeed * frightSpeedPerc;
+    frightDotSpeed = overallSpeed * frightDotSpeedPerc;
+    // position and direction
+    this.startPos = startPos;
+    this.startDirection = startDirection;
+    // info
+    this.settingsName = settingsName;
+  }
+}
+
+
+
+// =============================================================================
+// =============== GhostSettings================================================
+// =============================================================================
+public struct GhostSettings {
+  // start fields: position, direction, start in ghostHouse
+  public Vector2 startPos;
+  public Dir startDirection;
+  public bool startInGhosthouse;
+  // speed
+  public float normSpeed;
+  public float frightSpeed;
+  public float tunnelSpeed;
+  // path finding fields
+  public Ghost.ChaseScheme chaseScheme;
+  public Vector2Int scatterTile;
+  // info
+  public Color color;
+  public string name;
+
+  public GhostSettings(
+    // position and direction
+    Vector2 startPos, Dir startDirection, bool startInGhosthouse,
+    // speed
+    float normSpeed, float frightSpeed, float tunnelSpeed,
+    // path finding fields
+    Ghost.ChaseScheme chaseScheme, Vector2Int scatterTile,
+    // info
+    Color color, string name)
+  {
+    // position and direction
+    this.startPos = startPos;
+    this.startDirection = startDirection;
+    this.startInGhosthouse = startInGhosthouse;
+    // speed
+    this.normSpeed = normSpeed;
+    this.frightSpeed = frightSpeed;
+    this.tunnelSpeed = tunnelSpeed;
+    // path finding fields
+    this.chaseScheme = chaseScheme;
+    this.scatterTile = scatterTile;
+    // info
+    this.color = color;
+    this.name = name;
+  }
+}
+
+
 }

@@ -1,4 +1,4 @@
-//#define SHOW_GHOST_TARGET_TILE
+#define SHOW_GHOST_TARGET_TILE
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

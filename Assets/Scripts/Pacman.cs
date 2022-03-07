@@ -16,9 +16,9 @@ namespace PM {
     [SerializeField] private Maze maze;
     private PacmanSettings settings;
     // tile in the pacman maze grid
-    [SerializeField] private Vector2Int currentTile;
+    [SerializeField] private Vector2Int curTile;
     // current movement directions
-    [SerializeField] public Dir currentDir {get; private set;}
+    [SerializeField] public Dir curDir {get; private set;}
     // target position
     [SerializeField] private Vector2 moveToPos;
 
@@ -45,7 +45,7 @@ namespace PM {
 
 
       // initialize start values
-      currentTile = maze.GetTileCoordinate(currentPos);
+      curTile = maze.GetTileCoordinate(currentPos);
 
       // set new target position
       SetNewMoveToPos();
@@ -105,11 +105,11 @@ namespace PM {
       // if tile changed, update current tile and set new target position
       Vector2Int newTile = maze.GetTileCoordinate(transform.position);
 
-      if(!currentTile.Equals(newTile)) {
-        currentTile = newTile;
+      if(!curTile.Equals(newTile)) {
+        curTile = newTile;
 
         // update current speed
-        if(gameManager.PacmanEatsPellet(currentTile)) {
+        if(gameManager.PacmanEatsPellet(curTile)) {
           if(gameManager.GameModeIsFrightened()) {
             speed = settings.frightDotSpeed;
           } else {
@@ -124,7 +124,7 @@ namespace PM {
         }
 
         // if this new tile is a teleport tile --> teleport :D
-        if(maze.TileIsTeleport(currentTile)) {
+        if(maze.TileIsTeleport(curTile)) {
           Teleport();
         }
         SetNewMoveToPos();
@@ -134,28 +134,28 @@ namespace PM {
     void SetNewMoveToPos()
     {
       // retrieve target tile based on current tile and current direction
-      Vector2Int moveTile = maze.GetAdjacentTile(currentTile, currentDir);
+      Vector2Int moveTile = maze.GetAdjacentTile(curTile, curDir);
 
       // check if target tile is valid
       // if valid: retrieve target position in the target tile
       // else: set target position to current tile center
       if(maze.TileIsPath(moveTile)) {
-        moveToPos = maze.GetMoveToPos(moveTile, currentDir);
+        moveToPos = maze.GetMoveToPos(moveTile, curDir);
       } else {
-        moveToPos = maze.GetCenterPos(currentTile);
+        moveToPos = maze.GetCenterPos(curTile);
       }
     }
 
     bool ChangeDir(Dir dir)
     {
-      // no need to change if the currentDirection is the same
-      if(currentDir != dir) {
-        Vector2Int moveTile = maze.GetAdjacentTile(currentTile, dir);
+      // no need to change if the curDirection is the same
+      if(curDir != dir) {
+        Vector2Int moveTile = maze.GetAdjacentTile(curTile, dir);
         if(maze.TileIsPath(moveTile)) {
-          // store the new direction in currentDir to new dir
+          // store the new direction in curDir to new dir
           SetDir(dir);
           // update move to position
-          moveToPos = maze.GetMoveToPos(moveTile, currentDir);
+          moveToPos = maze.GetMoveToPos(moveTile, curDir);
           return true;
         }
       }
@@ -166,24 +166,24 @@ namespace PM {
     void Teleport()
     {
       // get next adjacent tile and wrap it
-      currentTile = maze.GetAdjacentTile(currentTile, currentDir);
-      maze.WrapTile(ref currentTile);
+      curTile = maze.GetAdjacentTile(curTile, curDir);
+      maze.WrapTile(ref curTile);
       // reset current position to new tile position
-      currentPos = maze.GetMoveToPos(currentTile, currentDir);
+      currentPos = maze.GetMoveToPos(curTile, curDir);
       // transform to view grid and pixelate
       transform.position = maze.SnapToPixel(currentPos);
     }
 
     void SetDir(Dir dir)
     {
-      if(currentDir != dir) {
+      if(curDir != dir) {
         animator.SetInteger("direction", (int) dir);
-        currentDir = dir;
+        curDir = dir;
       }
 
     }
 
-    public Vector2Int GetCurrentTile() { return currentTile;}
+    public Vector2Int GetCurTile() { return curTile;}
 
   }
 }

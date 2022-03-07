@@ -6,124 +6,6 @@ namespace PM {
 
 
 // =============================================================================
-// =============== MazeSettings ================================================
-// =============================================================================
-public struct MazeSettings {
-  public int width;
-  public int height;
-  public string imgMazePath;
-  public string imgMazeGhostZones;
-  public string imgMazePellets;
-  public string imgGhostHouseTiles;
-
-  public MazeSettings(string imgMazePath, string imgMazeGhostZones,
-    string imgMazePellets, string imgGhostHouseTiles)
-  {
-    width = 32;
-    height = 35;
-    this.imgMazePath = imgMazePath;
-    this.imgMazeGhostZones = imgMazeGhostZones;
-    this.imgMazePellets = imgMazePellets;
-    this.imgGhostHouseTiles = imgGhostHouseTiles;
-  }
-}
-
-// =============================================================================
-// =============== PacmanSettings ==============================================
-// =============================================================================
-public struct PacmanSettings {
-  // speed
-  public float normSpeed;
-  public float normDotSpeed;
-  public float frightSpeed;
-  public float frightDotSpeed;
-  // position and direction
-  public Vector2 startPos;
-  public Dir startDirection;
-  // info
-  public string settingsName;
-
-  public PacmanSettings(
-    float overallSpeed,
-    float normSpeedPerc, float normDotSpeedPerc,
-    float frightSpeedPerc, float frightDotSpeedPerc,
-    Vector2 startPos, Dir startDirection,
-    string settingsName)
-  {
-    // speed
-    normSpeed = overallSpeed * normSpeedPerc;
-    normDotSpeed = overallSpeed * normDotSpeedPerc;
-    frightSpeed = overallSpeed * frightSpeedPerc;
-    frightDotSpeed = overallSpeed * frightDotSpeedPerc;
-    // position and direction
-    this.startPos = startPos;
-    this.startDirection = startDirection;
-    // info
-    this.settingsName = settingsName;
-  }
-}
-
-// =============================================================================
-// =============== GhostModeInterval ===========================================
-// =============================================================================
-public struct GhostModeInterval {
-  public GhostMode mode {get; private set;}
-  public int interval {get; private set;}
-
-  public GhostModeInterval(GhostMode mode, int interval)
-  {
-    this.mode = mode;
-    this.interval = interval;
-  }
-}
-
-// =============================================================================
-// =============== GhostSettings================================================
-// =============================================================================
-public struct GhostSettings {
-  // start fields: position, direction, start in ghostHouse
-  public Vector2 startPos;
-  public Dir startDirection;
-  public bool startInGhosthouse
-  // speed
-  public float normSpeed;
-  public float frightSpeed;
-  public float tunnelSpeed;
-  // path finding fields
-  public Ghost.ChaseScheme chaseScheme;
-  public Vector2Int scatterTile;
-  // info
-  public Color color;
-  public string name;
-
-  public GhostSettings(
-    // position and direction
-    Vector2 startPos, Dir startDirection, bool startInGhosthouse
-    // speed
-    float normSpeed, float frightSpeed, float tunnelSpeed,
-    // path finding fields
-    Ghost.ChaseScheme chaseScheme, Vector2Int scatterTile,
-    // info
-    Color color, string name)
-  {
-    // position and direction
-    this.startPos = startPos;
-    this.startDirection = startDirection;
-    this.startInGhosthouse = startInGhosthouse;
-    // speed
-    this.normSpeed = normSpeed;
-    this.frightSpeed = frightSpeed;
-    this.tunnelSpeed = tunnelSpeed;
-    // path finding fields
-    this.chaseScheme = chaseScheme;
-    this.scatterTile = scatterTile;
-    // info
-    this.color = color;
-    this.name = name;
-  }
-}
-
-// =============================================================================
 // =============== static GameSettings class ===================================
 // =============================================================================
 
@@ -177,7 +59,7 @@ public static class GameSettings {
      *        can be easily altered to use multiple mode intervals
      */
     return new GhostModeInterval[8] {
-      new GhostModeInterval(GhostMode.SCATTER, 2),
+      new GhostModeInterval(GhostMode.SCATTER, 7),
       new GhostModeInterval(GhostMode.CHASE, 20),
       new GhostModeInterval(GhostMode.SCATTER, 7),
       new GhostModeInterval(GhostMode.CHASE, 20),
@@ -206,7 +88,7 @@ public static class GameSettings {
       // blinky
       new GhostSettings (
         // position and direction
-        new Vector2(27f, 31f),         // start pos
+        new Vector2(27f, 31.5f),         // start pos
         Dir.LEFT,                  // start direction
         false,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
@@ -221,9 +103,9 @@ public static class GameSettings {
       // Inky
       new GhostSettings (
         // position and direction
-        new Vector2(14.0f, 18.5f),          // start pos
-        Dir.UP,                  // start direction
-        true,                    // start In Ghosthouse
+        new Vector2(27f, 3.5f),          // start pos
+        Dir.LEFT,                  // start direction
+        false,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
@@ -237,7 +119,7 @@ public static class GameSettings {
       // pinky
       new GhostSettings (
         // position and direction
-        new Vector2(4f, 31f),          // start pos
+        new Vector2(4f, 31.5f),          // start pos
         Dir.RIGHT,                  // start direction
         false,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
@@ -253,7 +135,7 @@ public static class GameSettings {
       // Clyde
       new GhostSettings (
         // position and direction
-        new Vector2(4f, 3f),          // start pos
+        new Vector2(4f, 3.5f),          // start pos
         Dir.RIGHT,                // start direction
         false,                    // start In Ghosthouse
         // speed - normSpeed, frightSpeed, tunnelSpeed
