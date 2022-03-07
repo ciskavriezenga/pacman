@@ -8,17 +8,17 @@ namespace PM {
 // =============== GhostMove ===================================================
 // =============================================================================
 public struct GhostMove {
-  public Vector2Int targetTile { get; private set; }
-  public Dir dir { get; private set; }  
-  public Vector2Int targetPixelPos { get; private set; }
-  public Vector2 targetPos { get; private set; }
+  public Vector2Int tile { get; private set; }
+  public Dir dir { get; private set; }
+  public Vector2Int pixelPos { get; private set; }
+  public Vector2 pos { get; private set; }
 
   public GhostMove(Vector2Int targetTile, Dir dir,
     Vector2Int targetPixelPos, Vector2 targetPos) {
-    this.targetTile = targetTile;
+    this.tile = targetTile;
     this.dir = dir;
-    this.targetPixelPos = targetPixelPos;
-    this.targetPos = targetPos;
+    this.pixelPos = targetPixelPos;
+    this.pos = targetPos;
   }
 }
 

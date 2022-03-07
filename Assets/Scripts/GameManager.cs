@@ -45,7 +45,7 @@ public class GameManager : MonoBehaviour
 
     // retrieve the ghostModeIntervals to manage countdown times and ghostmodes
     ghostModeIntervals = GameSettings.GetGhostModeIntervals();
-    curGhostMode = GhostMode.CHASE;
+    curGhostMode = GhostMode.SCATTER;
     // create and instantiate the Maze GameObject
     maze = GameFactory.InstantiatePrefab("Prefabs/Maze", "maze").GetComponent<Maze>();
     maze.Initialize(GameSettings.GetMazeSettings());

@@ -58,22 +58,20 @@ public class Ghost : MonoBehaviour
   private GhostSettings settings;
 
   // -- current values --------------------------------------------------------
-  // cur position of ghost, also used as start position
+  // cur pos, tile, direction
   [SerializeField] private Vector2 curPos;
-  // cur tile
   [SerializeField] private Vector2Int curTile;
-  //[SerializeField] private Dir curDir;
-  // speed
+  [SerializeField] private Dir curDir;
   [SerializeField] private float curSpeed;
+  // TODO - use curMoveVector
+
   // ghost mode, either scatter, frightened, chase
   private GhostMode curGhostMode;
 
   // -- moves and related values ----------------------------------------------
-  // queue to store the upcoming moves
-  private Queue<GhostMove> moves = new Queue<GhostMove>();
   // we need to cache the current move and last move
   GhostMove curMove;
-  GhostMove lastMove;
+  GhostMove nextMove;
   // the ghost that will be used in case of the collaborate scheme
   // which corresponds to the original Inky behavior based on Blinky's pos
   private Ghost wingman;
@@ -123,10 +121,11 @@ public class Ghost : MonoBehaviour
     curSpeed = settings.normSpeed;
     // position ghost to start pos
     transform.position = curPos;
+
     // init moves
-    RegenerateMoves(curTile, settings.startDirection, 2);
-    // fetch first move
-    curMove = moves.Dequeue();
+    curMove = GenerateMove(curTile, settings.startDirection);
+    nextMove = GenerateMove(curMove.tile, settings.startDirection);
+    curDir = curMove.dir;
   }
 
 // =============================================================================
@@ -137,74 +136,75 @@ public class Ghost : MonoBehaviour
   void FixedUpdate()
   {
     // move curPos closer towards target position
-    // TODO - percentual if too near to target pos
+
     float distanceToTarget = CalcDistanceMoveAxis();
-    bool newMove = false;
-    if(distanceToTarget < curSpeed) {
-      newMove = true;
+    float moveDistance = curSpeed;
+    if(name == "blinky") {
+      Debug.Log("curPos: " + curPos
+      + " distanceToTarget: " + distanceToTarget
+      + " curMove.Pos: " + curMove.pos
+      + " curDir: " + curDir
+      + " curMove.dir: " + curMove.dir
+      );
     }
 
+    if(distanceToTarget < moveDistance) {
+      // we will either reached center new movement axis or target
+      if(curDir == curMove.dir) {
+        Move(distanceToTarget);
+        moveDistance -= distanceToTarget;
+        if(name == "blinky") {
+          Debug.Log("REACHED TARGET");
+        }
+        // reached target tile
+        curMove = nextMove;
+        nextMove = GenerateMove(curMove.tile, curMove.dir);
+      } else {
+        if(name == "blinky") {
+          Debug.Log("REACHED CENTER");
+        }
+        Move(distanceToTarget);
+        moveDistance -= distanceToTarget;
+        // we reached the center for the new move direction --> new direction
+        curDir = curMove.dir;
+        // update animation direction
+        animator.SetInteger("direction", (int) curMove.dir);
+      }
+    }
 
-    curPos = Vector2.MoveTowards(curPos, curMove.targetPos, curSpeed);
+    Move(moveDistance);
+  }
 
-    if(name == "blinky") {
-      Debug.Log("curPos: " + curPos + ", speed: " + curSpeed + ", dist: " + distanceToTarget);
+  void Move(float displacement) {
+    switch(curDir) {
+      case Dir.RIGHT:
+        curPos.x += displacement;
+        break;
+      case Dir.DOWN:
+        curPos.y -= displacement;
+        break;
+      case Dir.LEFT:
+        curPos.x -= displacement;
+        break;
+      case Dir.UP:
+        curPos.y += displacement;
+        break;
     }
     transform.position = curPos;
-    //if(maze.PixelCoordinate(curPos) == curMove.targetPixelPos) {
-    if(newMove) {
-      if(name == "blinky") {
-        Debug.Log(" *** Removing move from cue - "
-        + ", curMove.targetPos: " + curMove.targetPos
-        );
-      }
-      FetchNewMove();
-      if(name == "blinky") {
-        Debug.Log(" *** new move: "
-        + " targetPos: " + curMove.targetPos
-        + " dir: " + curMove.dir
-        );
-      }
-    }
-
-    // did we reach a new tile?
-    Vector2Int newTile = maze.GetTileCoordinate(curPos);
-    if(newTile != curTile) {
-      curTile = newTile;
-      // we reached a new tile
-      ProcessCurrentTileType();
-      // generate new Move
-      moves.Enqueue(GenerateMove(lastMove.targetTile, lastMove.dir));
-      if(name == "blinky") {
-        Debug.Log("------ moves.Enqueue, count: " + moves.Count);
-      }
-    }
   }
 
 
   float CalcDistanceMoveAxis() {
-    switch(curMove.dir) {
+    switch(curDir) {
       case Dir.RIGHT:
-        return curMove.targetPos.x - curPos.x;
+        return curMove.pos.x - curPos.x;
       case Dir.DOWN:
-        return curPos.y - curMove.targetPos.y;
+        return curPos.y - curMove.pos.y;
       case Dir.LEFT:
-        return curPos.x - curMove.targetPos.x;
+        return curPos.x - curMove.pos.x;
       }
     // up
-    return curMove.targetPos.y - curPos.y;
-  }
-
-  void FetchNewMove() {
-    Dir curDir = curMove.dir;
-    curMove = moves.Dequeue();
-    if(name == "blinky") {
-      Debug.Log("----  moves.Dequeue , count: " + moves.Count);
-    }
-    if(curDir != curMove.dir) {
-      // update animation direction
-      animator.SetInteger("direction", (int) curMove.dir);
-    }
+    return curMove.pos.y - curPos.y;
   }
 
 // =============================================================================
@@ -213,33 +213,26 @@ public class Ghost : MonoBehaviour
 
   void RegenerateMoves(Vector2Int fromTile, Dir direction, int numMoves)
   {
-    for(int i = 0; i < numMoves; i++) {
-      // cache lastMove generated
-      GhostMove move = GenerateMove(fromTile, direction);
-      moves.Enqueue(move);
-      fromTile = move.targetTile;
-      direction = move.dir;
-    }
+    // for(int i = 0; i < numMoves; i++) {
+    //   // cache lastMove generated
+    //   GhostMove move = GenerateMove(fromTile, direction);
+    //   moves.Enqueue(move);
+    //   fromTile = move.targetTile;
+    //   direction = move.dir;
+    // }
   }
 
   GhostMove GenerateMove(Vector2Int fromTile, Dir direction)
   {
     switch(curGhostMode) {
       case GhostMode.PACING_HOME:
-        lastMove = GeneratePacingHomeMove(fromTile, direction);
-        break;
+        return GeneratePacingHomeMove(fromTile, direction);
       case GhostMode.LEAVING_HOME:
         break;
       case GhostMode.FRIGHTENED:
-        lastMove = GenerateFrightenedMove(fromTile, direction);
-        break;
-      case GhostMode.SCATTER:
-      case GhostMode.CHASE:
-        lastMove = CreateChaseScatterMove(fromTile, direction);
-        break;
+        return GenerateFrightenedMove(fromTile, direction);
     }
-
-    return lastMove;
+    return CreateChaseScatterMove(fromTile, direction);
   }
 
   private GhostMove GeneratePacingHomeMove(Vector2Int fromTile, Dir direction)
@@ -260,10 +253,10 @@ public class Ghost : MonoBehaviour
     targetTileSR.transform.position = maze.GetCenterPos(targetTile);
 #endif
     // add 3 pixels horizontal offset so ghost appears at correct spot
-    Vector2Int targetPixelPos = maze.GetCenterPixelPos(targetTile);
-    targetPixelPos.x += 3;
-    return new GhostMove(targetTile, direction, targetPixelPos,
-      maze.Position(targetPixelPos));
+    // TODO fix hard code
+    Vector2 targetPos = maze.GetMoveToPos(targetTile, direction);
+    targetPos.x += 0.375f;
+    return new GhostMove(targetTile, direction, maze.PixelCoordinate(targetPos), targetPos);
   }
 
   private GhostMove GenerateFrightenedMove(Vector2Int fromTile, Dir direction)
@@ -289,9 +282,8 @@ public class Ghost : MonoBehaviour
 #if SHOW_GHOST_TARGET_TILE
     targetTileSR.transform.position = maze.GetCenterPos(randomTile);
 #endif
-    Vector2Int targetPixelPos = maze.GetCenterPixelPos(randomTile);
-    return new GhostMove(randomTile, dir, targetPixelPos,
-      maze.Position(targetPixelPos));
+    Vector2 targetPos = maze.GetMoveToPos(randomTile, dir);
+    return new GhostMove(randomTile, dir, maze.PixelCoordinate(targetPos), targetPos);
   }
 
   private GhostMove CreateChaseScatterMove(Vector2Int fromTile, Dir direction)
@@ -343,9 +335,9 @@ public class Ghost : MonoBehaviour
     }
     // return new GhostMove
     Vector2Int tile = adjacentTiles[indexBestMove];
-    Vector2Int targetPixelPos = maze.GetCenterPixelPos(tile);
-    return new GhostMove(tile, directions[indexBestMove],
-      targetPixelPos, maze.Position(targetPixelPos));
+    Dir dir = directions[indexBestMove];
+    Vector2 targetPos = maze.GetMoveToPos(tile, dir);
+    return new GhostMove(tile, dir, maze.PixelCoordinate(targetPos), targetPos);
   }
 
 
@@ -399,11 +391,8 @@ public class Ghost : MonoBehaviour
     curPos.x += deltaX;
     transform.position = curPos;
 
-    // empty cur moves
-    moves.Clear();
-    RegenerateMoves(curTile, curMove.dir, 2);
-    // reset curMove
-    curMove = moves.Dequeue();
+    // TODO - fix this
+    Debug.Log("FIX ME PLEASE!!!! ");
   }
 
 // =============================================================================
@@ -493,9 +482,7 @@ public class Ghost : MonoBehaviour
 
       // only generate 1 move, because we can still use the current move
       // depending on the current amount of moves - generate new num of moves
-      int numMoves = moves.Count;
-      moves.Clear();
-      RegenerateMoves(curTile, dirNewMove, numMoves);
+      Debug.Log("FIX ME FIX ME");
     }
   }
 
