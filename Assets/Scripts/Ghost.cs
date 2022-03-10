@@ -287,6 +287,8 @@ public class Ghost : MonoBehaviour
     Vector2Int randomTile = maze.GetAdjacentTile(fromTile, dir);
     // NOTE: up movement on no-upmovement tiles is allowed while frightened
     int numTimes = 0;
+    // TODO - retrieve open directions for current tile instead of TileIsPath
+    // see pacman.js
     while(dir == oppositeDirs[(int) direction] || !maze.TileIsPath(randomTile)) {
       dir = (Dir) ((int)dir - 1);
       // wrap direction if equal NONE  (-1)

@@ -3,10 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
+
+
 namespace PM {
 
 public class GameManager : MonoBehaviour
 {
+
+  // NOTE: for now quick and dirty hard coded values to switch settings
+  // either DEFAULT, TELEPORTS, ENERGIZERS
+  GameSettings.MapType mapType = GameSettings.MapType.TELEPORTS;
 
   public static GameManager Instance { get; private set; }
   // reference to the Maze, Pacman and Ghost objects
@@ -48,7 +56,7 @@ public class GameManager : MonoBehaviour
     curGhostMode = GhostMode.SCATTER;
     // create and instantiate the Maze GameObject
     maze = GameFactory.InstantiatePrefab("Prefabs/Maze", "maze").GetComponent<Maze>();
-    maze.Initialize(GameSettings.GetMazeSettings());
+    maze.Initialize(GameSettings.GetMazeSettings(mapType));
 
     // create and instantiate the highscore GameObject
     score = GameFactory.InstantiatePrefab("Prefabs/Score", "score").GetComponent<Score>();

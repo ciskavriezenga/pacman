@@ -13,6 +13,14 @@ namespace PM {
 // TODO - create an array with arrays for scatter / chase mode per (multiple)
 //        levels according to pdf pacman dosier
 public static class GameSettings {
+
+  public enum MapType {
+    DEFAULT,
+    TELEPORTS,
+    ENERGIZERS
+  }
+
+
   private static float overallSpeed = 0.1875f;
 
   public static PacmanSettings GetPacmanSettings()
@@ -26,13 +34,29 @@ public static class GameSettings {
     "default-pacman-settings");
   }
 
-  public static MazeSettings GetMazeSettings()
+  // NOTE: for now passing the map type as a string that corresponds to the
+  // folder
+  public static MazeSettings GetMazeSettings(MapType mapType)
   {
+    string folder;
+    switch(mapType) {
+      case MapType.TELEPORTS:
+        folder = "Teleports";
+        break;
+      case MapType.ENERGIZERS:
+        folder = "Energizers";
+        break;
+      default:
+        folder = "Default";
+        break;
+    }
+
+    Debug.Log("GameSettings.GetMazeSettings - loading map: Assets/Images/Maze-maps/"+ folder + "/maze-paths.png");
     return new MazeSettings(
-      "Assets/Images/Maze-maps/Default/maze-paths.png",
-      "Assets/Images/Maze-maps/Default/maze-ghost-zones.png",
-      "Assets/Images/Maze-maps/Default/maze-pellets.png",
-      "Assets/Images/Maze-maps/Default/maze-ghost-house-wall-tiles.png"
+      "Assets/Images/Maze-maps/"+ folder + "/maze-paths.png",
+      "Assets/Images/Maze-maps/"+ folder + "/maze-ghost-zones.png",
+      "Assets/Images/Maze-maps/"+ folder + "/maze-pellets.png",
+      "Assets/Images/Maze-maps/"+ folder + "/maze-ghost-house-wall-tiles.png"
     );
   }
 
