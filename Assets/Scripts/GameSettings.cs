@@ -18,6 +18,7 @@ public static class GameSettings {
     DEFAULT,
     TELEPORTS,
     ENERGIZERS,
+    HIGHLY_CONNECTED,
     OPEN_SPACE
   }
 
@@ -52,6 +53,9 @@ public static class GameSettings {
         break;
       case MapType.ENERGIZERS:
         folder = "Energizers";
+        break;
+      case MapType.HIGHLY_CONNECTED:
+        folder = "Highly-connected";
         break;
       case MapType.OPEN_SPACE:
         folder = "Open-space";

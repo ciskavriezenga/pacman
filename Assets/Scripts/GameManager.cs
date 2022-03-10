@@ -13,8 +13,8 @@ public class GameManager : MonoBehaviour
 {
 
   // NOTE: for now quick and dirty hard coded values to switch settings
-  // either DEFAULT, TELEPORTS, ENERGIZERS
-  GameSettings.MapType mapType = GameSettings.MapType.OPEN_SPACE;
+  // either DEFAULT, TELEPORTS, ENERGIZERS, HIGHLY_CONNECTED, OPEN_SPACE
+  GameSettings.MapType mapType = GameSettings.MapType.HIGHLY_CONNECTED;
 
   // Design pattern - Singleton
   public static GameManager Instance { get; private set; }
