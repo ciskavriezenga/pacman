@@ -1,3 +1,4 @@
+//#define DEBUG_MAZE
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -73,9 +74,9 @@ public class Maze : MonoBehaviour
       new Vector2(edge, 0.5f),   // entering tile from right
       new Vector2(0.5f, 0.0f)  // entering tile from below
     };
-
+#if DEBUG_MAZE
     Debug.Log("Maze.Initialize - settings.imgMazePath: " + settings.imgMazePath);
-
+#endif
     // create MazeTileTypes - models that hold the maze tile types
     pathsTileTypes = new MazeTileTypes(settings.imgMazePath, width, height);
     ghostZonesTileTypes = new MazeTileTypes(settings.imgMazeGhostZones, width, height);
@@ -84,8 +85,9 @@ public class Maze : MonoBehaviour
 
     // TODO - fetch door as vector2 - store as vector2int + get offset.
     ghostDoorTargetTile = ghostZonesTileTypes.GetGhostDoorTargetTile();
+#if DEBUG_MAZE
     Debug.Log("Maze.Initialize - ghostDoorTargetTile " + ghostDoorTargetTile);
-
+#endif
     // TODO - understand why tiles of previous run are still drawn.
     // clear tile maps
     tilemapWalls.ClearAllTiles();
@@ -95,15 +97,6 @@ public class Maze : MonoBehaviour
     DrawTiles(pathsTileTypes);
     DrawTiles(ghosthouseTileTypes);
     DrawTiles(ghostZonesTileTypes);
-  }
-
-  public void Awake()
-  {
-    Debug.Log("MAZE - AWAKE");
-  }
-
-  public void Start() {
-    Debug.Log("MAZE - START");
   }
 
 

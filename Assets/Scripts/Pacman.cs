@@ -31,8 +31,7 @@ namespace PM {
       this.settings = settings;
       // retrieve reference to the maze
       this.gameManager = gameManager;
-      this.maze = gameManager.GetMaze();
-      Debug.Log("PACMAN- INITIALIZE - maze: " + maze);
+      this.maze = gameManager.GetMaze();      
 
       // get reference to animator
       animator = GetComponent<Animator>();
@@ -55,12 +54,13 @@ namespace PM {
     // no use of physics, so using Update instead of FixedUpdate for now
     void Update()
     {
+      // we want to enable to act on the latest pressed arrow key
       // cache the last hit key
       CacheLastHitArrowKey();
       // clear last hit key if the cached key equals a arrow key up event
       ClearLastHitKey();
 
-      // if there is a arrow key is cached, act on it
+      // if there is an arrow key cached, act on it
       if(lastHitKeyDir != Dir.NONE) {
         if(ChangeDir(lastHitKeyDir)) {
           // we changed the direction, clear the key cache

@@ -1,5 +1,5 @@
 #define SHOW_GHOST_TARGET_TILE
-#define DEBUG_GHOSTMODE
+//#define DEBUG_GHOSTMODE
 //#define DEBUG_MOVEMENT
 using System.Collections;
 using System.Collections.Generic;
@@ -245,7 +245,9 @@ public class Ghost : MonoBehaviour
         return GeneratePacingHomeMove(fromTile, direction);
       case GhostMode.LEAVING_HOME:
         targetTile = maze.ghostDoorTargetTile;
+#if DEBUG_GHOSTMODE
         Debug.Log("LEAVING_HOME - targetTile: " + targetTile);
+#endif
         if(curTile == targetTile) {
           curGhostMode = gameManager.curGhostMode;
           return GenerateMove(fromTile, direction);
@@ -391,7 +393,7 @@ public class Ghost : MonoBehaviour
 
   // teleports the gost to the otherside
   void Teleport(){
-    // NOTE : curly only horizontal teleport functionality
+    // NOTE : currently only horizontal teleport functionality
 
     // deltaX is positive when curTile.x == 0
     int deltaX = maze.width - 1;

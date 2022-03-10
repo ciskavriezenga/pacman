@@ -14,8 +14,9 @@ public class GameManager : MonoBehaviour
 
   // NOTE: for now quick and dirty hard coded values to switch settings
   // either DEFAULT, TELEPORTS, ENERGIZERS
-  GameSettings.MapType mapType = GameSettings.MapType.TELEPORTS;
+  GameSettings.MapType mapType = GameSettings.MapType.OPEN_SPACE;
 
+  // Design pattern - Singleton
   public static GameManager Instance { get; private set; }
   // reference to the Maze, Pacman and Ghost objects
   [SerializeField] private Maze maze;
@@ -48,6 +49,10 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
     }
+
+    // Make the game run at 60 fms as possible
+    Application.targetFrameRate = 60;
+
     // initialize the random number generator with a seed
     Random.InitState(0);
 
@@ -85,8 +90,8 @@ public class GameManager : MonoBehaviour
     ResetGhostModeInterval();
   }
 
-  // Update is called once per frame
-  private void Update()
+  // FixedUpdate is called once per frame
+  private void FixedUpdate()
   {
     if(curGhostMode == GhostMode.FRIGHTENED){
       frightenedTime -= Time.deltaTime;
@@ -144,7 +149,7 @@ public class GameManager : MonoBehaviour
     curGhostMode = mode;
     // update the ghostmode for each ghost
 #if !NO_GHOSTS
-    Debug.Log("GameManager-UpdateGhostMode - New ghostmode: " + curGhostMode);
+    //Debug.Log("GameManager-UpdateGhostMode - New ghostmode: " + curGhostMode);
     for(int i = 0; i < ghosts.Length; i++) {
       ghosts[i].SwitchMode(curGhostMode);
     }

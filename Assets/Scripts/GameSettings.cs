@@ -17,7 +17,14 @@ public static class GameSettings {
   public enum MapType {
     DEFAULT,
     TELEPORTS,
-    ENERGIZERS
+    ENERGIZERS,
+    OPEN_SPACE
+  }
+
+  public enum GhostStrategy {
+    DEFAULT,
+    ALL_TARGETING,
+
   }
 
 
@@ -45,6 +52,9 @@ public static class GameSettings {
         break;
       case MapType.ENERGIZERS:
         folder = "Energizers";
+        break;
+      case MapType.OPEN_SPACE:
+        folder = "Open-space";
         break;
       default:
         folder = "Default";
@@ -132,8 +142,7 @@ public static class GameSettings {
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
-        Ghost.ChaseScheme.TARGET_PACMAN, // chase scheme
-        //Ghost.ChaseScheme.COLLABORATE, // chase scheme
+        Ghost.ChaseScheme.COLLABORATE, // chase scheme
         new Vector2Int(27, 0),         // scatter tile
         // info
         Color.cyan,
@@ -148,8 +157,7 @@ public static class GameSettings {
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
-        Ghost.ChaseScheme.TARGET_PACMAN, // chase scheme
-        //Ghost.ChaseScheme.AHEAD_OF_PACMAN, // chase scheme
+        Ghost.ChaseScheme.AHEAD_OF_PACMAN, // chase scheme
         new Vector2Int(4, 35),         // scatter tile
         // info
         Color.magenta,
@@ -164,8 +172,7 @@ public static class GameSettings {
         // speed - normSpeed, frightSpeed, tunnelSpeed
         speedTypes[0], speedTypes[1], speedTypes[2],
         // path finding fields
-        Ghost.ChaseScheme.TARGET_PACMAN, // chase scheme
-        //Ghost.ChaseScheme.CIRCLE_AROUND, // chase scheme
+        Ghost.ChaseScheme.CIRCLE_AROUND, // chase scheme
         new Vector2Int(4, 0),         // scatter tile
         // info
         new Color(1f, 0.5f, 0f),
